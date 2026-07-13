@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "scripts/.test-out",
+    "noEmit": false,
+    "paths": {}
+  },
+  "include": [
+    "scripts/test-reminder-rules.ts",
+    "src/data/builtInReminderRules.ts",
+    "src/engine/reminders/**/*.ts",
+    "src/engine/calendar/**/*.ts",
+    "src/engine/zmanim/**/*.ts",
+    "src/engine/types/**/*.ts",
+    "lib/appState.ts",
+    "lib/cities.ts"
+  ]
+}

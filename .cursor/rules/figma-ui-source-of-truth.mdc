@@ -1,0 +1,33 @@
+---
+description: Figma is the single source of truth for all REBIID UI work
+globs: app/**/*.tsx,src/components/**/*.tsx,constants/**/*.ts
+alwaysApply: true
+---
+
+# Figma → Code (REBIID)
+
+Read **`docs/DESIGN_REFERENCES.md`** before any UI work.
+
+## Official Figma frames (Home)
+
+| Theme | Node ID |
+|-------|---------|
+| Light | `3:114` |
+| Dark | `3:343` |
+
+File key: `rrqRV8A0WmnjGgSM1WR7Sh`
+
+Use **Figma MCP** (`get_design_context`) on the relevant frame before visual changes.
+
+## Quick rules
+
+- Match layout, spacing, typography, colors, hierarchy, icons, shadows, radius, RTL.
+- Do not invent colors, spacing, radius, or components.
+- Reuse design tokens and `src/components/` shared components.
+- Theme: Settings → מראה (בהיר / כהה / לפי המכשיר) — immediate, local storage.
+- Visual changes only unless logic change is explicitly requested.
+- If Figma is unclear — ask; never guess.
+
+## End of every UI task
+
+Report: frame inspected, screens/components/tokens changed, remaining diffs, RTL + Light + Dark verified.
