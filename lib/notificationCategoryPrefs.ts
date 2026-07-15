@@ -38,7 +38,7 @@ export const ADVANCE_REMINDER_OPTIONS: { key: AdvanceReminderMinutes; label: str
 
 export const CATEGORY_SOUND_OPTIONS: { key: NotificationSound; label: string }[] = [
   { key: 'default', label: 'ברירת מחדל' },
-  { key: 'gentle', label: 'עדין' },
+  { key: 'gentle', label: 'צליל עדין' },
   { key: 'classic', label: 'קלאסי' },
   { key: 'silent', label: 'שקט' },
 ];

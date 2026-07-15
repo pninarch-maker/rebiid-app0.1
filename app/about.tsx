@@ -90,7 +90,7 @@ export default function AboutScreen() {
 
         <View style={styles.heroCard}>
           <Image
-            source={require('@/assets/images/rebiid-logo.png')}
+            source={require('@/assets/images/rebiid-logo.webp')}
             style={styles.logo}
             contentFit="contain"
             accessibilityLabel={REBIID.name}

@@ -5,6 +5,8 @@ import {
   buildCategoryNotificationContent,
   buildNotificationContent,
   ensureAndroidNotificationChannels,
+  resolveCategoryAndroidChannelId,
+  resolveNotificationChannelId,
 } from '@/lib/notificationChannels';
 import {
   getNotificationCategoryPreferenceForReminder,
@@ -111,17 +113,22 @@ export async function syncLocalNotifications(): Promise<number> {
         currentAppSettings,
       );
 
+      const content = buildCategoryNotificationContent(
+        categoryPreference,
+        reminder.title,
+        reminder.message,
+        { reminderId: reminder.id },
+      );
+
       await scheduleNotificationAsync({
         identifier: reminder.id,
-        content: buildCategoryNotificationContent(
-          categoryPreference,
-          reminder.title,
-          reminder.message,
-          { reminderId: reminder.id },
-        ),
+        content,
         trigger: {
           type: SchedulableTriggerInputTypes.DATE,
           date: triggerDate,
+          ...(Platform.OS === 'android'
+            ? { channelId: resolveCategoryAndroidChannelId(categoryPreference) }
+            : {}),
         },
       });
 
@@ -212,15 +219,20 @@ export async function scheduleTestNotification(): Promise<boolean> {
       return false;
     }
 
+    const content = buildNotificationContent(
+      currentAppSettings,
+      'היי, זו תזכורת ניסיון 👋',
+      'REBIID עובד — ככה ייראו התזכורות שלך.',
+    );
+
     await scheduleNotificationAsync({
-      content: buildNotificationContent(
-        currentAppSettings,
-        'היי, זו תזכורת ניסיון 👋',
-        'REBIID עובד — ככה ייראו התזכורות שלך.',
-      ),
+      content,
       trigger: {
         type: SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: 5,
+        ...(Platform.OS === 'android'
+          ? { channelId: resolveNotificationChannelId(currentAppSettings) }
+          : {}),
       },
     });
 

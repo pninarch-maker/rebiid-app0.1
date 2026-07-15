@@ -40,7 +40,6 @@ import { APPEARANCE_PREFERENCE_OPTIONS } from '@/lib/appearancePreference';
 import {
   ADDRESS_GENDER_OPTIONS,
   CANDLE_LIGHTING_PRESETS,
-  HEBREW_MONTHS,
   USE_DEFAULT_REMINDER_OFFSET,
   type AddressGender,
   type AppearancePreference,
@@ -50,11 +49,13 @@ import {
 } from '@/lib/settingsTypes';
 import { NotificationCategoriesSection } from '@/src/components/NotificationCategoriesSection';
 import { CityPickerField } from '@/src/components/CityPickerField';
+import { HebrewDatePicker } from '@/src/components/HebrewDatePicker';
 import {
   createSettingsStyles,
   type SettingsScreenStyles,
 } from '@/src/theme/settingsScreenStyles';
 import { useTheme, useThemeStyles } from '@/src/theme/useTheme';
+import { formatHebrewCustomDateWithTime } from '@/lib/hebrewMonths';
 
 type OffsetPresetKey = 'default' | 'at_time' | '10' | '30' | '60' | '1440' | 'custom';
 
@@ -379,12 +380,25 @@ export default function SettingsScreen() {
   );
 
   const handleUpdateNotificationPreferences = useCallback(
-    async (preferences: AppSettings['notificationCategoryPreferences']) => {
+    async (
+      preferences: AppSettings['notificationCategoryPreferences'],
+      options?: { reschedule?: boolean; notificationSound?: AppSettings['notificationSound'] },
+    ) => {
       if (!settings) {
         return;
       }
 
-      await persistSettings({ ...settings, notificationCategoryPreferences: preferences });
+      const nextSettings: AppSettings = {
+        ...settings,
+        notificationCategoryPreferences: preferences,
+      };
+
+      if (options?.notificationSound) {
+        nextSettings.notificationSound = options.notificationSound;
+        nextSettings.notificationSoundEnabled = options.notificationSound !== 'silent';
+      }
+
+      await persistSettings(nextSettings);
       await loadReminderEngineSettings();
     },
     [persistSettings, settings],
@@ -712,7 +726,11 @@ export default function SettingsScreen() {
                     <View style={styles.rowText}>
                       <Text style={styles.rowTitle}>{reminder.title}</Text>
                       <Text style={styles.rowDescription}>
-                        {`${reminder.hebrewDay} ${reminder.hebrewMonth} · ${reminder.time}`}
+                        {formatHebrewCustomDateWithTime(
+                          reminder.hebrewDay,
+                          reminder.hebrewMonth,
+                          reminder.time,
+                        )}
                       </Text>
                     </View>
                     <Switch
@@ -757,39 +775,18 @@ export default function SettingsScreen() {
                   multiline
                   textAlign="right"
                 />
-                <Text style={styles.inputLabel}>חודש עברי</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.monthRow}>
-                  {HEBREW_MONTHS.map((month) => {
-                    const selected = minhagForm.hebrewMonth === month;
-
-                    return (
-                      <Pressable
-                        key={month}
-                        style={[styles.monthChip, selected && styles.monthChipSelected]}
-                        onPress={() => setMinhagForm((current) => ({ ...current, hebrewMonth: month }))}>
-                        <Text
-                          style={[
-                            styles.monthChipText,
-                            selected && styles.monthChipTextSelected,
-                          ]}>
-                          {month}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-                <Text style={styles.inputLabel}>יום בחודש</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="number-pad"
-                  value={String(minhagForm.hebrewDay)}
-                  onChangeText={(text) =>
+                <HebrewDatePicker
+                  value={{
+                    hebrewMonth: minhagForm.hebrewMonth,
+                    hebrewDay: minhagForm.hebrewDay,
+                  }}
+                  onChange={(next) =>
                     setMinhagForm((current) => ({
                       ...current,
-                      hebrewDay: Math.max(1, Math.min(30, Number.parseInt(text, 10) || 1)),
+                      hebrewMonth: next.hebrewMonth,
+                      hebrewDay: next.hebrewDay,
                     }))
                   }
-                  textAlign="right"
                 />
                 <Text style={styles.inputLabel}>שעה (HH:MM)</Text>
                 <TextInput
@@ -843,7 +840,11 @@ export default function SettingsScreen() {
                   <View style={styles.rowText}>
                     <Text style={styles.rowTitle}>{reminder.title}</Text>
                     <Text style={styles.rowDescription}>
-                      {`${reminder.hebrewDay} ${reminder.hebrewMonth} · ${reminder.time}`}
+                      {formatHebrewCustomDateWithTime(
+                        reminder.hebrewDay,
+                        reminder.hebrewMonth,
+                        reminder.time,
+                      )}
                     </Text>
                   </View>
                   <Switch
@@ -888,38 +889,18 @@ export default function SettingsScreen() {
                 multiline
                 textAlign="right"
               />
-              <Text style={styles.inputLabel}>חודש עברי</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.monthRow}>
-                {HEBREW_MONTHS.map((month) => {
-                  const selected = reminderForm.hebrewMonth === month;
-
-                  return (
-                    <Pressable
-                      key={month}
-                      style={[styles.monthChip, selected && styles.monthChipSelected]}
-                      onPress={() =>
-                        setReminderForm((current) => ({ ...current, hebrewMonth: month }))
-                      }>
-                      <Text
-                        style={[styles.monthChipText, selected && styles.monthChipTextSelected]}>
-                        {month}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-              <Text style={styles.inputLabel}>יום בחודש</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="number-pad"
-                value={String(reminderForm.hebrewDay)}
-                onChangeText={(text) =>
+              <HebrewDatePicker
+                value={{
+                  hebrewMonth: reminderForm.hebrewMonth,
+                  hebrewDay: reminderForm.hebrewDay,
+                }}
+                onChange={(next) =>
                   setReminderForm((current) => ({
                     ...current,
-                    hebrewDay: Math.max(1, Math.min(30, Number.parseInt(text, 10) || 1)),
+                    hebrewMonth: next.hebrewMonth,
+                    hebrewDay: next.hebrewDay,
                   }))
                 }
-                textAlign="right"
               />
               <Text style={styles.inputLabel}>שעה (HH:MM)</Text>
               <TextInput
@@ -1015,7 +996,7 @@ export default function SettingsScreen() {
         <Pressable style={styles.card} onPress={() => router.push('/about')}>
           <View style={styles.aboutLinkRow}>
             <Image
-              source={require('@/assets/images/rebiid-logo.png')}
+              source={require('@/assets/images/rebiid-logo.webp')}
               style={styles.aboutLinkLogo}
               contentFit="contain"
               accessibilityLabel={REBIID.name}

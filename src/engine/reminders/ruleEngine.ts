@@ -1,5 +1,3 @@
-import { HDate } from '@hebcal/core';
-
 import { getBuiltInReminderRules } from '@/src/data/reminders';
 import {
   matchesReminderPattern,
@@ -14,6 +12,7 @@ import {
   buildPersonalPlaceholderValues,
   finalizeReminderText,
 } from '@/lib/reminderPlaceholders';
+import { hdateMatchesEnglishMonth } from '@/src/data/knowledge/hebrewDate';
 
 import { addDays, toDateKey } from './helpers';
 import {
@@ -190,7 +189,7 @@ export function evaluateBuiltInRules(
 
 function customMatchesToday(reminder: CustomReminder, ctx: DayCalendarContext): boolean {
   return (
-    ctx.hdate.getMonthName() === reminder.hebrewMonth &&
+    hdateMatchesEnglishMonth(ctx.hdate, reminder.hebrewMonth) &&
     ctx.hdate.getDate() === reminder.hebrewDay
   );
 }

@@ -124,14 +124,35 @@ export function daysUntilHebrewDate(from: HDate, monthName: string, day: number)
   return target.abs() - from.abs();
 }
 
+/**
+ * Keywords that must equal event `desc` exactly.
+ * Substring matching incorrectly matched "Yom Kippur Katan Av" / "Purim Katan".
+ * Basename-only matching is unsafe: hebcal sets basename "Yom Kippur" on
+ * "Erev Yom Kippur" (and similarly for Purim), which would fire day-of rules on erev.
+ */
+const EXACT_HOLIDAY_DESC_KEYWORDS = new Set([
+  'Yom Kippur',
+  'Erev Yom Kippur',
+  'Purim',
+  'Erev Purim',
+]);
+
+function eventMatchesHolidayKeyword(event: DayEventInfo, keyword: string): boolean {
+  if (EXACT_HOLIDAY_DESC_KEYWORDS.has(keyword)) {
+    return event.desc === keyword;
+  }
+
+  const lowerKeyword = keyword.toLowerCase();
+  return (
+    event.desc.includes(keyword) ||
+    event.basename.includes(keyword) ||
+    event.desc.toLowerCase().includes(lowerKeyword)
+  );
+}
+
 export function hasHolidayKeyword(events: DayEventInfo[], keywords: string[]): boolean {
   return events.some((event) =>
-    keywords.some(
-      (keyword) =>
-        event.desc.includes(keyword) ||
-        event.basename.includes(keyword) ||
-        event.desc.toLowerCase().includes(keyword.toLowerCase()),
-    ),
+    keywords.some((keyword) => eventMatchesHolidayKeyword(event, keyword)),
   );
 }
 

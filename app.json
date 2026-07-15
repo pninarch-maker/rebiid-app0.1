@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "REBIID",
-    "slug": "luach-mvp",
+    "slug": "rebiid-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.rebiid.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#F7F9FC",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,6 +39,9 @@
           "icon": "./assets/images/icon.png",
           "color": "#3657D6",
           "defaultChannel": "reminders-default",
+          "sounds": [
+            "./assets/sounds/rebiid-gentle.wav"
+          ],
           "enableBackgroundRemoteNotifications": false
         }
       ],
@@ -58,6 +61,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "70e37a87-55c8-4700-9eaf-08747281689a"
+      }
+    },
+    "owner": "eli-deep-medias-team"
   }
 }

@@ -16,7 +16,7 @@ interface NotificationCategoriesSectionProps {
   settings: AppSettings;
   onUpdatePreferences: (
     preferences: AppSettings['notificationCategoryPreferences'],
-    options?: { reschedule?: boolean },
+    options?: { reschedule?: boolean; notificationSound?: AppSettings['notificationSound'] },
   ) => Promise<void>;
 }
 
@@ -61,7 +61,10 @@ export function NotificationCategoriesSection({
         nextPreferences[categoryId].enabled = true;
       }
 
-      await onUpdatePreferences(nextPreferences, { reschedule: true });
+      await onUpdatePreferences(nextPreferences, {
+        reschedule: true,
+        notificationSound: nextPreferences[categoryId].sound,
+      });
     },
     [onUpdatePreferences, settings.notificationCategoryPreferences],
   );

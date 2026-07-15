@@ -2,12 +2,18 @@
  * Built-in reminder catalog and trigger checks.
  * Run: npm run test:reminders
  */
+import { HDate } from '@hebcal/core';
+
 import {
   BUILT_IN_REMINDER_RULES,
   validateReminderCatalog,
 } from '../src/data/reminders';
 import { getDefaultReminderEngineSettings } from '../src/engine/reminders/defaultSettings';
 import { getAppRemindersForDay } from '../src/engine/reminders/ruleEngine';
+import {
+  formatHebrewCustomDate,
+  formatHebrewCustomDateWithTime,
+} from '../lib/hebrewMonths';
 
 const testSettings = {
   ...getDefaultReminderEngineSettings(true),
@@ -62,7 +68,7 @@ assertRuleOnDate('Ashkenazi shofar Elul', '2025-08-25', 'ashkenazi_shofar');
 assertRuleOnDate('Sephardi selichot Elul', '2025-08-25', 'elul_sephardi_selichot', 'sephardi');
 assertRuleOnDate('First Chanukah night eve', '2025-12-13', 'chanukah_first_night');
 assertRuleOnDate('Chanukah on Friday', '2025-12-19', 'chanukah_friday');
-assertRuleOnDate('Purim mishloach', '2025-03-13', 'purim_mishloach_manot');
+assertRuleOnDate('Purim mishloach', '2025-03-14', 'purim_mishloach_manot');
 assertRuleOnDate('Bedikat Chametz eve', '2025-04-12', 'bedikat_chametz');
 assertRuleOnDate('Pesach halachic midday', '2025-04-12', 'pesach_halachic_midday');
 assertRuleOnDate('First Omer night eve', '2025-04-14', 'omer_first_night');
@@ -179,6 +185,78 @@ assertNoRuleOnDateWithSettings(
   minhagEnabledSettings,
 );
 
+assertNoRuleOnDateWithSettings(
+  'Yom Kippur Katan day does not trigger yom_kippur_fast_ends',
+  '2026-07-14',
+  'yom_kippur_fast_ends',
+  minhagEnabledSettings,
+);
+assertNoRuleOnDateWithSettings(
+  'Yom Kippur Katan day does not trigger yom_kippur_fast_begins',
+  '2026-07-14',
+  'yom_kippur_fast_begins',
+  minhagEnabledSettings,
+);
+assertRuleOnDateWithSettings(
+  'Yom Kippur Katan still appears when minhag category enabled (29 Tammuz 2026)',
+  '2026-07-14',
+  'yom_kippur_katan',
+  minhagEnabledSettings,
+);
+assertRuleOnDate(
+  'Yom Kippur fast begins on Erev Yom Kippur 2025',
+  '2025-10-01',
+  'yom_kippur_fast_begins',
+);
+assertRuleOnDate(
+  'Yom Kippur fast ends on Yom Kippur 2025',
+  '2025-10-02',
+  'yom_kippur_fast_ends',
+);
+
+{
+  const purimKatan = new HDate(14, 'Adar I', 5784).greg();
+  const purimKatanKey = `${purimKatan.getFullYear()}-${String(purimKatan.getMonth() + 1).padStart(2, '0')}-${String(purimKatan.getDate()).padStart(2, '0')}`;
+  assertNoRuleOnDate(
+    'Purim Katan does not trigger Purim mishloach manot',
+    purimKatanKey,
+    'purim_mishloach_manot',
+  );
+}
+
+{
+  const start = new Date('2020-01-01T12:00:00');
+  const end = new Date('2030-01-01T12:00:00');
+  let yomKippurDays = 0;
+
+  for (let time = start.getTime(); time < end.getTime(); time += 24 * 60 * 60 * 1000) {
+    const day = new Date(time);
+    const hdate = new HDate(day);
+    const result = getAppRemindersForDay(day, testSettings, []);
+    const hasFastEnds = result.some((reminder) => reminder.ruleId === 'yom_kippur_fast_ends');
+    const isTenthOfTishrei = String(hdate.getMonthName()) === 'Tishrei' && hdate.getDate() === 10;
+
+    if (hasFastEnds !== isTenthOfTishrei) {
+      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+      throw new Error(
+        `Yom Kippur fast ends mismatch on ${key}: has=${hasFastEnds}, is10Tishrei=${isTenthOfTishrei}`,
+      );
+    }
+
+    if (isTenthOfTishrei) {
+      yomKippurDays += 1;
+    }
+  }
+
+  if (yomKippurDays < 10) {
+    throw new Error(`Expected at least 10 Yom Kippur days in scan, got ${yomKippurDays}`);
+  }
+
+  console.log(
+    `✓ Yom Kippur fast ends only on 10 Tishrei across 10 years (${yomKippurDays} occurrences)`,
+  );
+}
+
 const minhagCustomReminder = {
   id: 'test-minhag-custom',
   title: 'יארצייט משפחתי',
@@ -196,7 +274,17 @@ function assertCustomReminderOnDate(
   date: string,
   customId: string,
   settings: typeof testSettings,
-  customReminders: typeof minhagCustomReminder[],
+  customReminders: Array<{
+    id: string;
+    title: string;
+    message: string;
+    hebrewMonth: string;
+    hebrewDay: number;
+    time: string;
+    enabled: boolean;
+    reminderOffsetMinutes: number;
+    category: 'personal' | 'minhag_segulah';
+  }>,
 ): void {
   const day = new Date(`${date}T12:00:00`);
   const result = getAppRemindersForDay(day, settings, customReminders);
@@ -214,7 +302,17 @@ function assertNoCustomReminderOnDate(
   date: string,
   customId: string,
   settings: typeof testSettings,
-  customReminders: typeof minhagCustomReminder[],
+  customReminders: Array<{
+    id: string;
+    title: string;
+    message: string;
+    hebrewMonth: string;
+    hebrewDay: number;
+    time: string;
+    enabled: boolean;
+    reminderOffsetMinutes: number;
+    category: 'personal' | 'minhag_segulah';
+  }>,
 ): void {
   const day = new Date(`${date}T12:00:00`);
   const result = getAppRemindersForDay(day, settings, customReminders);
@@ -240,6 +338,115 @@ assertNoCustomReminderOnDate(
   'test-minhag-custom',
   testSettings,
   [minhagCustomReminder],
+);
+
+function assertTrue(label: string, value: boolean): void {
+  if (!value) {
+    throw new Error(label);
+  }
+  console.log(`✓ ${label}`);
+}
+
+function toDateKeyLocal(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const leapAdarIDay = new HDate(1, 'Adar I', 5784).greg();
+const leapAdarIIDay = new HDate(7, 'Adar II', 5784).greg();
+const plainAdarDay = new HDate(7, 'Adar', 5785).greg();
+
+const adarPlainCustom = {
+  id: 'test-adar-plain',
+  title: 'אדר רגיל',
+  message: 'תזכורת אדר.',
+  hebrewMonth: 'Adar',
+  hebrewDay: 7,
+  time: '09:00',
+  enabled: true,
+  reminderOffsetMinutes: -1,
+  category: 'personal' as const,
+};
+
+const adarICustom = {
+  ...adarPlainCustom,
+  id: 'test-adar-i',
+  title: 'אדר א׳',
+  hebrewMonth: 'Adar I',
+  hebrewDay: 1,
+};
+
+const adarIICustom = {
+  ...adarPlainCustom,
+  id: 'test-adar-ii',
+  title: 'אדר ב׳',
+  hebrewMonth: 'Adar II',
+  hebrewDay: 7,
+};
+
+assertCustomReminderOnDate(
+  'Plain Adar custom reminder fires on Adar II in leap year',
+  toDateKeyLocal(leapAdarIIDay),
+  'test-adar-plain',
+  testSettings,
+  [adarPlainCustom],
+);
+assertNoCustomReminderOnDate(
+  'Plain Adar custom reminder does not fire on Adar I in leap year',
+  toDateKeyLocal(leapAdarIDay),
+  'test-adar-plain',
+  testSettings,
+  [adarPlainCustom],
+);
+assertCustomReminderOnDate(
+  'Plain Adar custom reminder fires on non-leap Adar',
+  toDateKeyLocal(plainAdarDay),
+  'test-adar-plain',
+  testSettings,
+  [adarPlainCustom],
+);
+assertCustomReminderOnDate(
+  'Adar I custom reminder fires only on Adar I',
+  toDateKeyLocal(leapAdarIDay),
+  'test-adar-i',
+  testSettings,
+  [adarICustom],
+);
+assertNoCustomReminderOnDate(
+  'Adar I custom reminder does not fire on Adar II',
+  toDateKeyLocal(leapAdarIIDay),
+  'test-adar-i',
+  testSettings,
+  [adarICustom],
+);
+assertCustomReminderOnDate(
+  'Adar II custom reminder fires on Adar II',
+  toDateKeyLocal(leapAdarIIDay),
+  'test-adar-ii',
+  testSettings,
+  [adarIICustom],
+);
+assertNoCustomReminderOnDate(
+  'Adar II custom reminder does not fire on Adar I',
+  toDateKeyLocal(leapAdarIDay),
+  'test-adar-ii',
+  testSettings,
+  [adarIICustom],
+);
+
+assertTrue(
+  'Hebrew custom date label for 1 Nisan',
+  formatHebrewCustomDate(1, 'Nisan') === 'א׳ בניסן',
+);
+assertTrue(
+  'Hebrew custom date label for 29 Tammuz',
+  formatHebrewCustomDate(29, 'Tammuz') === 'כ״ט בתמוז',
+);
+assertTrue(
+  'Hebrew custom date with time uses Hebrew month',
+  formatHebrewCustomDateWithTime(15, 'Shvat', '09:00') === 'ט״ו בשבט · 09:00',
 );
 
 function assertNoDuplicateRules(label: string, date: string): void {

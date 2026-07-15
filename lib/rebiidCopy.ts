@@ -157,6 +157,14 @@ export const ModalCopy = {
   noExtraDetails: 'זה כל מה שצריך לדעת כרגע.',
 } as const;
 
+export const HebrewDatePickerCopy = {
+  fieldLabel: 'תאריך עברי',
+  cancel: 'ביטול',
+  confirm: 'בחירת התאריך',
+  prevMonth: 'חודש קודם',
+  nextMonth: 'חודש הבא',
+} as const;
+
 export const ZmanimCopy = {
   baseTitle: 'זמני היום',
   noCity: 'עיר לא נבחרה',

@@ -47,5 +47,6 @@ app-example
 !.env.example
 *.apk
 *.aab
+artifacts/
 coverage/
 ~$*.xlsx

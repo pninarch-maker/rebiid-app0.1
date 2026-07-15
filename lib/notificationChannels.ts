@@ -12,22 +12,46 @@ import type { NotificationCategoryPreference } from './notificationCategories';
 // REBIID intentionally does not use remote push notifications.
 // All reminders are scheduled locally on the device.
 
+/** Custom sound basename registered via expo-notifications `sounds` in app.json. */
+export const REBIID_GENTLE_SOUND = 'rebiid-gentle.wav';
+
+/**
+ * Android channel ids. Sound binding is immutable after first create — bump the
+ * gentle channel version when changing the custom sound (v2 → v3, …).
+ */
 export const NOTIFICATION_CHANNELS = {
   default: 'reminders-default',
   silent: 'reminders-silent',
-  gentle: 'reminders-gentle',
+  /** Custom gentle WAV — new id so devices with old `reminders-gentle` get the sound. */
+  gentle: 'rebiid-reminders-gentle-v2',
   classic: 'reminders-classic',
 } as const;
 
 const CHANNEL_LABELS: Record<NotificationSound, string> = {
   default: 'תזכורות — ברירת מחדל',
   silent: 'תזכורות — שקט',
-  gentle: 'תזכורות — עדין',
+  gentle: 'תזכורות — צליל עדין',
   classic: 'תזכורות — קלאסי',
 };
 
 export function shouldPlayNotificationSound(settings: AppSettings): boolean {
   return settings.notificationSoundEnabled && settings.notificationSound !== 'silent';
+}
+
+/** Content / channel sound value for the selected preference. */
+export function resolveNotificationSoundFile(
+  sound: NotificationSound,
+  playSound: boolean,
+): string | false {
+  if (!playSound || sound === 'silent') {
+    return false;
+  }
+
+  if (sound === 'gentle') {
+    return REBIID_GENTLE_SOUND;
+  }
+
+  return 'default';
 }
 
 export function resolveNotificationChannelId(settings: AppSettings): string {
@@ -73,7 +97,8 @@ export async function ensureAndroidNotificationChannels(
     await setNotificationChannelAsync(NOTIFICATION_CHANNELS.gentle, {
       ...baseOptions,
       name: CHANNEL_LABELS.gentle,
-      sound: 'default',
+      sound: REBIID_GENTLE_SOUND,
+      importance: AndroidImportance.HIGH,
     });
 
     await setNotificationChannelAsync(NOTIFICATION_CHANNELS.classic, {
@@ -102,20 +127,15 @@ export function buildCategoryNotificationContent(
 ): NotificationContentInput {
   const playSound = shouldCategoryPlaySound(preference);
   const vibrate = shouldCategoryVibrate(preference);
-  const channelId = resolveCategoryChannelId(preference);
   const vibrationPattern = vibrate ? [0, 250, 250, 250] : [0];
+  const sound = resolveNotificationSoundFile(preference.sound, playSound);
 
   return {
     title,
     body,
     data,
-    sound: playSound ? 'default' : false,
-    ...(Platform.OS === 'android'
-      ? {
-          channelId,
-          vibrate: vibrationPattern,
-        }
-      : {}),
+    sound,
+    ...(Platform.OS === 'android' ? { vibrate: vibrationPattern } : {}),
   };
 }
 
@@ -167,23 +187,29 @@ function resolveCategoryChannelId(preference: NotificationCategoryPreference): s
   }
 }
 
+/** Android channel id for a category preference (Expo 54: set on the trigger). */
+export function resolveCategoryAndroidChannelId(
+  preference: NotificationCategoryPreference,
+): string {
+  return resolveCategoryChannelId(preference);
+}
+
 export function buildNotificationContent(
   settings: AppSettings,
   title: string,
   body: string,
   data?: Record<string, unknown>,
 ): NotificationContentInput {
-  const channelId = resolveNotificationChannelId(settings);
   const playSound = shouldPlayNotificationSound(settings);
+  const sound = resolveNotificationSoundFile(settings.notificationSound, playSound);
 
   return {
     title,
     body,
     data,
-    sound: playSound ? 'default' : false,
+    sound,
     ...(Platform.OS === 'android'
       ? {
-          channelId,
           vibrate: settings.notificationVibrationEnabled ? [0, 250, 250, 250] : [0],
         }
       : {}),
