@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+﻿import { Platform } from 'react-native';
 
 import {
   AndroidImportance,
@@ -13,25 +13,25 @@ import type { NotificationCategoryPreference } from './notificationCategories';
 // All reminders are scheduled locally on the device.
 
 /** Custom sound basename registered via expo-notifications `sounds` in app.json. */
-export const REBIID_GENTLE_SOUND = 'rebiid-gentle.wav';
+export const REBIID_GENTLE_SOUND = 'rebiid_gentle.wav';
 
 /**
- * Android channel ids. Sound binding is immutable after first create — bump the
- * gentle channel version when changing the custom sound (v2 → v3, …).
+ * Android channel ids. Sound binding is immutable after first create ג€” bump the
+ * gentle channel version when changing the custom sound (v2 ג†’ v3, ג€¦).
  */
 export const NOTIFICATION_CHANNELS = {
   default: 'reminders-default',
   silent: 'reminders-silent',
-  /** Custom gentle WAV — new id so devices with old `reminders-gentle` get the sound. */
+  /** Custom gentle WAV ג€” new id so devices with old `reminders-gentle` get the sound. */
   gentle: 'rebiid-reminders-gentle-v2',
   classic: 'reminders-classic',
 } as const;
 
 const CHANNEL_LABELS: Record<NotificationSound, string> = {
-  default: 'תזכורות — ברירת מחדל',
-  silent: 'תזכורות — שקט',
-  gentle: 'תזכורות — צליל עדין',
-  classic: 'תזכורות — קלאסי',
+  default: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳',
+  silent: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳©׳§׳˜',
+  gentle: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳¦׳׳™׳ ׳¢׳“׳™׳',
+  classic: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳§׳׳׳¡׳™',
 };
 
 export function shouldPlayNotificationSound(settings: AppSettings): boolean {
@@ -215,3 +215,4 @@ export function buildNotificationContent(
       : {}),
   };
 }
+
