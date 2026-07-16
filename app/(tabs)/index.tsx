@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -75,8 +75,7 @@ function mergeMinhagimForFriday(
 
 export default function TodayScreen() {
   const theme = useAppTheme();
-  const { width } = useWindowDimensions();
-  const { horizontalPadding } = useScreenLayout();
+  const { horizontalPadding, isTwoColumnLayout } = useScreenLayout();
   const insets = useSafeAreaInsets();
   const zmanimSettingsKey = useZmanimSettingsKey();
   const today = useMemo(() => JewishEngine.getToday(), [zmanimSettingsKey]);
@@ -131,8 +130,7 @@ export default function TodayScreen() {
   );
 
   const historyFabBottom = HISTORY_FAB_MARGIN + insets.bottom;
-  const twoColumn = width >= theme.layout.bentoMinTwoColumnWidth;
-  const bentoItemStyle = twoColumn ? styles.bentoHalf : styles.bentoFull;
+  const bentoItemStyle = isTwoColumnLayout ? styles.bentoHalf : styles.bentoFull;
 
   const [detailsReminder, setDetailsReminder] = useState<ReminderDetailsData | null>(null);
   const [detailsVisible, setDetailsVisible] = useState(false);

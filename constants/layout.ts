@@ -121,7 +121,8 @@ export const bentoCardStyle: ViewStyle = {
 };
 
 export const bentoGridGap = Spacing.md;
-export const bentoMinTwoColumnWidth = 380;
+/** Logical window width in dp (`useWindowDimensions().width`) for two-column Home bento. */
+export const bentoMinTwoColumnWidth = 768;
 
 /** Modals / bottom sheets — subtle glass surface */
 export const modalSheetStyle: ViewStyle = {

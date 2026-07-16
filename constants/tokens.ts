@@ -130,7 +130,8 @@ export const LayoutTokens = {
   tabBarHeight: 76,
   headerMarginBottom: SpacingTokens.xl,
   bentoGridGap: SpacingTokens.md,
-  bentoMinTwoColumnWidth: 380,
+  /** Logical window width (dp from useWindowDimensions) required for two-column bento. */
+  bentoMinTwoColumnWidth: 768,
   bentoMinHeight: 148,
 } as const;
 

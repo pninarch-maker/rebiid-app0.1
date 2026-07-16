@@ -3,7 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-import { rtlRow } from '@/constants/layout';
+import { hebrewStartFlexDirection } from '@/constants/layout';
 import { useTheme } from '@/src/theme/useTheme';
 
 type TabIconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -26,6 +26,7 @@ export function BottomNavigation({ state, descriptors, navigation }: BottomTabBa
       style={[
         styles.bar,
         {
+          flexDirection: hebrewStartFlexDirection(),
           height,
           paddingBottom: 16 + androidNavInset,
           backgroundColor: theme.colors.background,
@@ -79,7 +80,6 @@ export function BottomNavigation({ state, descriptors, navigation }: BottomTabBa
 
 const styles = StyleSheet.create({
   bar: {
-    ...rtlRow,
     borderTopWidth: 1,
     paddingTop: 8,
   },

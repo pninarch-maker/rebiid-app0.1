@@ -8,11 +8,16 @@ import { useScreenLayout } from '@/hooks/useScreenLayout';
 
 interface AppShellProps {
   children: ReactNode;
+  /** Optional home header — rendered inside the same ScrollView as children. */
   hero?: ReactNode;
   footerInset?: number;
   contentStyle?: StyleProp<ViewStyle>;
 }
 
+/**
+ * Single vertical scroll for home: hero + cards together.
+ * Only the tab bar (outside this shell) stays fixed — not the header.
+ */
 export function AppShell({ children, hero, footerInset = 0, contentStyle }: AppShellProps) {
   const theme = useAppTheme();
   const { horizontalPadding } = useScreenLayout();
@@ -20,8 +25,8 @@ export function AppShell({ children, hero, footerInset = 0, contentStyle }: AppS
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {hero}
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
             {
@@ -31,7 +36,9 @@ export function AppShell({ children, hero, footerInset = 0, contentStyle }: AppS
             },
             contentStyle,
           ]}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          {hero}
           {children}
         </ScrollView>
       </SafeAreaView>
@@ -46,10 +53,14 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  scroll: {
+    flex: 1,
+  },
   scrollContent: {
     paddingTop: 0,
     width: '100%',
     alignSelf: 'center',
+    flexGrow: 1,
   },
 });
 

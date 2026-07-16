@@ -2,7 +2,6 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { rtlHeadingText } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { useScreenLayout } from '@/hooks/useScreenLayout';
 
 interface HebrewDateHeroProps {
   greeting: string;
@@ -18,7 +17,6 @@ export function HebrewDateHero({
   gregorianDate,
 }: HebrewDateHeroProps) {
   const theme = useAppTheme();
-  const { horizontalPadding } = useScreenLayout();
 
   return (
     <View
@@ -26,7 +24,6 @@ export function HebrewDateHero({
         styles.hero,
         {
           backgroundColor: theme.heroBackground,
-          paddingHorizontal: horizontalPadding,
         },
       ]}>
       <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>{greeting}</Text>
