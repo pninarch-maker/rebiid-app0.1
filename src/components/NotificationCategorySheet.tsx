@@ -1,4 +1,4 @@
-import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/layout';
@@ -9,6 +9,7 @@ import {
   DELIVERY_MODE_OPTIONS,
 } from '@/lib/notificationCategoryPrefs';
 import type { NotificationCategoryPreference } from '@/lib/settingsTypes';
+import { RtlCenteredText, RtlText } from '@/src/components/rtl';
 import { createNotificationCategorySheetStyles } from '@/src/theme/notificationSheetStyles';
 import { useTheme, useThemeStyles } from '@/src/theme/useTheme';
 
@@ -44,7 +45,9 @@ function OptionRow({
       <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
         {selected ? <View style={styles.radioInner} /> : null}
       </View>
-      <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>{label}</Text>
+      <RtlText inRow style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
+        {label}
+      </RtlText>
     </Pressable>
   );
 }
@@ -74,7 +77,9 @@ function ToggleRow({
         trackColor={switchTrack}
         thumbColor={switchThumb}
       />
-      <Text style={styles.toggleLabel}>{label}</Text>
+      <RtlText inRow style={styles.toggleLabel}>
+        {label}
+      </RtlText>
     </View>
   );
 }
@@ -102,13 +107,15 @@ export function NotificationCategorySheet({
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={ButtonCopy.close} />
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }]}>
           <View style={styles.handle} />
-          <Text style={styles.title}>{definition.title}</Text>
-          <Text style={styles.subtitle}>{definition.description}</Text>
+          <RtlText variant="heading" style={styles.title}>
+            {definition.title}
+          </RtlText>
+          <RtlText style={styles.subtitle}>{definition.description}</RtlText>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollArea}>
             {!knowledgeOnly ? (
               <>
-                <Text style={styles.sectionLabel}>{SettingsCopy.notificationTypeTitle}</Text>
+                <RtlText style={styles.sectionLabel}>{SettingsCopy.notificationTypeTitle}</RtlText>
                 <View style={styles.group}>
                   {DELIVERY_MODE_OPTIONS.map((option, index) => (
                     <OptionRow
@@ -134,7 +141,7 @@ export function NotificationCategorySheet({
                   />
                 </View>
 
-                <Text style={styles.sectionLabel}>{SettingsCopy.advanceReminderTitle}</Text>
+                <RtlText style={styles.sectionLabel}>{SettingsCopy.advanceReminderTitle}</RtlText>
                 <View style={styles.group}>
                   {ADVANCE_REMINDER_OPTIONS.map((option, index) => (
                     <OptionRow
@@ -150,7 +157,7 @@ export function NotificationCategorySheet({
               </>
             ) : null}
 
-            <Text style={styles.sectionLabel}>{SettingsCopy.homeScreenTitle}</Text>
+            <RtlText style={styles.sectionLabel}>{SettingsCopy.homeScreenTitle}</RtlText>
             <View style={styles.group}>
               <OptionRow
                 label={SettingsCopy.homeScreenYes}
@@ -172,7 +179,7 @@ export function NotificationCategorySheet({
             accessibilityRole="button"
             style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}
             onPress={onClose}>
-            <Text style={styles.saveButtonText}>{ButtonCopy.save}</Text>
+            <RtlCenteredText style={styles.saveButtonText}>{ButtonCopy.save}</RtlCenteredText>
           </Pressable>
         </View>
       </View>

@@ -115,15 +115,13 @@ export function createCityPickerFieldStyles(theme: AppTheme, surfaces: ThemedSur
     },
     value: {
       flex: 1,
+      minWidth: 0,
       fontSize: Typography.body,
       fontWeight: '600',
       color: colors.text,
-      textAlign: 'right',
-      writingDirection: 'rtl',
-      ...rtlHeadingText,
-      ...rtlCardText,
     },
     chevron: {
+      flexShrink: 0,
       fontSize: 18,
       color: colors.textMuted,
       lineHeight: 18,

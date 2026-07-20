@@ -2,7 +2,6 @@ import { StyleSheet } from 'react-native';
 
 import {
   buttonText,
-  physicalHebrewRow,
   physicalLtrRow,
   Layout,
   rtlCardText,
@@ -68,7 +67,8 @@ export function createHebrewDatePickerStyles(theme: AppTheme, surfaces: ThemedSu
       ...rtlHeadingText,
     },
     navRow: {
-      ...physicalHebrewRow,
+      // physicalLtrRow: render [next, prev] in HebrewDatePicker for prev on physical right.
+      ...physicalLtrRow,
       justifyContent: 'space-between',
       gap: 12,
       marginBottom: 12,
@@ -162,7 +162,8 @@ export function createHebrewDatePickerStyles(theme: AppTheme, surfaces: ThemedSu
       color: colors.primary,
     },
     actionsRow: {
-      ...physicalHebrewRow,
+      // physicalLtrRow: render [confirm, cancel] so cancel is physical right.
+      ...physicalLtrRow,
       gap: 12,
       ...rtlContentBlock,
     },

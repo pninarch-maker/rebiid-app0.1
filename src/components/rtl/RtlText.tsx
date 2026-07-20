@@ -18,6 +18,8 @@ export interface RtlTextProps extends TextProps {
 /**
  * Hebrew text with locked RTL invariants applied at render time.
  * Caller styles (color, fontSize, weight) merge safely; alignment cannot be overridden.
+ * Must sit under RtlBlock / rtlContent / physicalLtrRow (physical LTR direction) so
+ * textAlign: 'right' means the physical right under native forcesRTL.
  */
 export function RtlText({ variant = 'block', inRow = false, style, ...props }: RtlTextProps) {
   let merged: TextStyle =

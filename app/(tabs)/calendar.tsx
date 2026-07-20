@@ -121,11 +121,12 @@ export default function CalendarScreen() {
         </View>
 
         <View style={styles.navRow}>
-          <Pressable style={styles.navButton} onPress={() => changeMonth(-1)}>
-            <RtlText style={styles.navButtonText}>חודש קודם</RtlText>
-          </Pressable>
+          {/* physicalLtrRow: next on physical left, prev on physical right */}
           <Pressable style={styles.navButton} onPress={() => changeMonth(1)}>
             <RtlText style={styles.navButtonText}>חודש הבא</RtlText>
+          </Pressable>
+          <Pressable style={styles.navButton} onPress={() => changeMonth(-1)}>
+            <RtlText style={styles.navButtonText}>חודש קודם</RtlText>
           </Pressable>
         </View>
 

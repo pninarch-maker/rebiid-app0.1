@@ -72,7 +72,9 @@ assert(
 
 assert('bundled sound file exists', fs.existsSync(path.resolve('assets/sounds/rebiid_gentle.wav')));
 
-const appJson = JSON.parse(fs.readFileSync(path.resolve('app.json'), 'utf8')) as {
+const appJson = JSON.parse(
+  fs.readFileSync(path.resolve('app.json'), 'utf8').replace(/^\uFEFF/, ''),
+) as {
   expo: {
     extra?: { supportsRTL?: boolean; forcesRTL?: boolean };
     plugins: unknown[];

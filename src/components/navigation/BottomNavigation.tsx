@@ -3,7 +3,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-import { physicalLtrRow, TAB_ROUTE_VISUAL_ORDER } from '@/constants/layout';
+import { physicalLtrRow, TAB_ROUTE_PHYSICAL_LTR_ORDER } from '@/constants/layout';
 import { useTheme } from '@/src/theme/useTheme';
 import { RtlCenteredText } from '@/src/components/rtl';
 
@@ -17,8 +17,9 @@ const TAB_ICONS: Record<string, TabIconName> = {
 };
 
 /**
- * Tab bar: physicalLtrRow + explicit route order (no reverse + row-reverse combo).
- * Visual right → left: היום | לוח | תזכורות | הגדרות
+ * Tab bar: physicalLtrRow + TAB_ROUTE_PHYSICAL_LTR_ORDER (no reverse + row-reverse).
+ * Physical left → right: הגדרות | תזכורות | לוח | היום
+ * Physical far right = היום; far left = הגדרות.
  */
 export function BottomNavigation({ state, descriptors, navigation }: BottomTabBarProps) {
   const theme = useTheme();
@@ -39,7 +40,7 @@ export function BottomNavigation({ state, descriptors, navigation }: BottomTabBa
           borderTopColor: theme.colors.divider,
         },
       ]}>
-      {TAB_ROUTE_VISUAL_ORDER.map((routeName) => {
+      {TAB_ROUTE_PHYSICAL_LTR_ORDER.map((routeName) => {
         const route = routesByName[routeName];
         if (!route) {
           return null;

@@ -690,14 +690,18 @@ export default function SettingsScreen() {
         <RtlText style={styles.sectionHelper}>{SettingsCopy.notificationsHelper}</RtlText>
         <RtlText style={styles.privacyNote}>{SettingsCopy.notificationsPrivacyNote}</RtlText>
         <View style={styles.card}>
-          <View style={styles.row}>
-            <Switch
-              value={settings.notificationsEnabled}
-              onValueChange={handleNotificationsToggle}
-              trackColor={theme.surfaces.switchTrack}
-              thumbColor={theme.surfaces.switchThumb(settings.notificationsEnabled)}
-            />
-            <RtlText style={styles.rowTitle}>{SettingsCopy.notificationsToggle}</RtlText>
+          <View style={styles.masterToggleRow}>
+            <View style={styles.masterToggleSwitchWrap}>
+              <Switch
+                value={settings.notificationsEnabled}
+                onValueChange={handleNotificationsToggle}
+                trackColor={theme.surfaces.switchTrack}
+                thumbColor={theme.surfaces.switchThumb(settings.notificationsEnabled)}
+              />
+            </View>
+            <View style={styles.masterToggleLabelWrap}>
+              <Text style={styles.masterToggleLabel}>{SettingsCopy.notificationsToggle}</Text>
+            </View>
           </View>
         </View>
 

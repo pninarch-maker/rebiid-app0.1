@@ -1,52 +1,16 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useScreenLayout } from '@/hooks/useScreenLayout';
 import { APP_META, getAppVersion } from '@/lib/appInfo';
 import { openEmailAddress, openWebsiteUrl } from '@/lib/contactLinks';
 import { AboutScreenCopy, REBIID } from '@/lib/rebiidCopy';
+import { RtlLabelValueRow, RtlLabelValueRowCustom } from '@/src/components/RtlLabelValueRow';
+import { LtrValueText, RtlText } from '@/src/components/rtl';
 import { createAboutStyles, type AboutScreenStyles } from '@/src/theme/aboutScreenStyles';
 import { useThemeStyles } from '@/src/theme/useTheme';
-
-function MetaRow({
-  label,
-  value,
-  styles,
-}: {
-  label: string;
-  value: string;
-  styles: AboutScreenStyles;
-}) {
-  return (
-    <View style={styles.metaRow}>
-      <Text style={styles.metaLabel}>{label}</Text>
-      <Text style={styles.metaValue}>{value}</Text>
-    </View>
-  );
-}
-
-function MetaLinkRow({
-  label,
-  value,
-  onPress,
-  styles,
-}: {
-  label: string;
-  value: string;
-  onPress: () => void;
-  styles: AboutScreenStyles;
-}) {
-  return (
-    <View style={styles.metaRow}>
-      <Text style={styles.metaLabel}>{label}</Text>
-      <Pressable accessibilityRole="link" onPress={onPress} style={styles.metaLinkPressable}>
-        <Text style={styles.metaLink}>{value}</Text>
-      </Pressable>
-    </View>
-  );
-}
 
 function LegalSection({
   title,
@@ -61,8 +25,10 @@ function LegalSection({
 }) {
   return (
     <View style={[styles.legalSection, isLast && styles.legalSectionLast]}>
-      <Text style={styles.legalTitle}>{title}</Text>
-      <Text style={styles.legalBody}>{body}</Text>
+      <RtlText variant="heading" style={styles.legalTitle}>
+        {title}
+      </RtlText>
+      <RtlText style={styles.legalBody}>{body}</RtlText>
     </View>
   );
 }
@@ -83,9 +49,11 @@ export default function AboutScreen() {
             accessibilityLabel={AboutScreenCopy.back}
             onPress={() => router.back()}
             style={styles.backButton}>
-            <Text style={styles.backButtonText}>{AboutScreenCopy.back}</Text>
+            <RtlText style={styles.backButtonText}>{AboutScreenCopy.back}</RtlText>
           </Pressable>
-          <Text style={styles.screenTitle}>{AboutScreenCopy.title}</Text>
+          <RtlText variant="heading" style={styles.screenTitle}>
+            {AboutScreenCopy.title}
+          </RtlText>
         </View>
 
         <View style={styles.heroCard}>
@@ -95,33 +63,52 @@ export default function AboutScreen() {
             contentFit="contain"
             accessibilityLabel={REBIID.name}
           />
-          <Text style={styles.appName}>{REBIID.name}</Text>
-          <Text style={styles.tagline}>{REBIID.tagline}</Text>
-          <Text style={styles.taglineEn}>{REBIID.taglineEn}</Text>
-          <Text style={styles.description}>{AboutScreenCopy.description}</Text>
+          <RtlText variant="heading" style={styles.appName}>
+            {REBIID.name}
+          </RtlText>
+          <RtlText style={styles.tagline}>{REBIID.tagline}</RtlText>
+          <LtrValueText align="end" style={styles.taglineEn}>
+            {REBIID.taglineEn}
+          </LtrValueText>
+          <RtlText style={styles.description}>{AboutScreenCopy.description}</RtlText>
         </View>
 
         <View style={styles.card}>
-          <MetaRow label={AboutScreenCopy.versionLabel} value={version} styles={styles} />
-          <MetaRow label={AboutScreenCopy.developerLabel} value={APP_META.developer} styles={styles} />
-          <MetaRow label={AboutScreenCopy.companyLabel} value={APP_META.company} styles={styles} />
-          <MetaLinkRow
+          <RtlLabelValueRow
+            bordered
+            label={AboutScreenCopy.versionLabel}
+            value={version}
+            valueDirection="ltr"
+          />
+          <RtlLabelValueRow bordered label={AboutScreenCopy.developerLabel} value={APP_META.developer} />
+          <RtlLabelValueRow bordered label={AboutScreenCopy.companyLabel} value={APP_META.company} />
+          <RtlLabelValueRowCustom
             label={AboutScreenCopy.websiteLabel}
-            value={APP_META.website}
-            onPress={() => void openWebsiteUrl(APP_META.website)}
-            styles={styles}
+            value={
+              <Pressable
+                accessibilityRole="link"
+                onPress={() => void openWebsiteUrl(APP_META.website)}
+                style={styles.metaLinkPressable}>
+                <LtrValueText style={styles.metaLink}>{APP_META.website}</LtrValueText>
+              </Pressable>
+            }
           />
-          <MetaLinkRow
+          <RtlLabelValueRowCustom
             label={AboutScreenCopy.emailLabel}
-            value={APP_META.email}
-            onPress={() => void openEmailAddress(APP_META.email)}
-            styles={styles}
+            value={
+              <Pressable
+                accessibilityRole="link"
+                onPress={() => void openEmailAddress(APP_META.email)}
+                style={styles.metaLinkPressable}>
+                <LtrValueText style={styles.metaLink}>{APP_META.email}</LtrValueText>
+              </Pressable>
+            }
           />
-          <MetaRow label={AboutScreenCopy.licenseLabel} value={APP_META.license} styles={styles} />
+          <RtlLabelValueRow bordered label={AboutScreenCopy.licenseLabel} value={APP_META.license} />
           <View style={styles.metaRowStack}>
-            <Text style={styles.metaLabel}>{AboutScreenCopy.copyrightLabel}</Text>
-            <Text style={styles.metaValueStack}>{APP_META.copyright}</Text>
-            <Text style={styles.metaValueStackMuted}>{APP_META.copyrightRights}</Text>
+            <RtlText style={styles.metaLabel}>{AboutScreenCopy.copyrightLabel}</RtlText>
+            <RtlText style={styles.metaValueStack}>{APP_META.copyright}</RtlText>
+            <RtlText style={styles.metaValueStackMuted}>{APP_META.copyrightRights}</RtlText>
           </View>
         </View>
 

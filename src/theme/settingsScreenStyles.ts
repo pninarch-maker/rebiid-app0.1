@@ -173,6 +173,36 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
     row: {
       ...rtlOptionRow,
     },
+    /**
+     * Master notifications toggle — fixed geometry so Hebrew label never jumps
+     * while the Switch toggles or sync runs. physicalLtrRow: switch left, label right.
+     */
+    masterToggleRow: {
+      ...physicalLtrRow,
+      alignItems: 'center',
+      gap: 16,
+      minHeight: Layout.minTouchTarget,
+    },
+    masterToggleSwitchWrap: {
+      width: 52,
+      height: Layout.minTouchTarget,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    masterToggleLabelWrap: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: 'center',
+    },
+    masterToggleLabel: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      alignSelf: 'stretch',
+    },
     rowText: { flex: 1, ...rtlContent, gap: 4 },
     rowTitle: {
       fontSize: 17,

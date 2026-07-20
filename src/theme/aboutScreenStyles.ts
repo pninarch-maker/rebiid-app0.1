@@ -26,7 +26,7 @@ export function createAboutStyles(theme: AppTheme, surfaces: ThemedSurfaces) {
       gap: 12,
     },
     backButton: {
-      alignSelf: 'flex-start',
+      alignSelf: 'stretch',
       paddingVertical: 4,
       minHeight: Layout.minTouchTarget,
       justifyContent: 'center',
@@ -117,7 +117,7 @@ export function createAboutStyles(theme: AppTheme, surfaces: ThemedSurfaces) {
       fontSize: Typography.body,
       fontWeight: '600',
       color: colors.primary,
-      textAlign: 'right',
+      textAlign: 'left',
       writingDirection: 'ltr',
     },
     metaValueStack: {

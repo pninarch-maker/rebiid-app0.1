@@ -2,8 +2,7 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Layout } from '@/constants/layout';
-import { RtlTextTokens } from '@/constants/tokens';
+import { Layout, physicalStyleDirection } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useScreenLayout } from '@/hooks/useScreenLayout';
 
@@ -18,6 +17,7 @@ interface AppShellProps {
 /**
  * Single vertical scroll for home: hero + cards together.
  * Hero bleeds edge-to-edge; cards use horizontal padding. Only the tab bar stays fixed.
+ * Scroll content uses physicalStyleDirection so Hebrew textAlign is not Fabric-mirrored.
  */
 export function AppShell({ children, hero, footerInset = 0, contentStyle }: AppShellProps) {
   const theme = useAppTheme();
@@ -58,6 +58,7 @@ export function AppShell({ children, hero, footerInset = 0, contentStyle }: AppS
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    ...physicalStyleDirection,
   },
   safeArea: {
     flex: 1,
@@ -69,6 +70,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     width: '100%',
     flexGrow: 1,
+    ...physicalStyleDirection,
   },
   heroBleed: {
     alignSelf: 'stretch',
@@ -78,7 +80,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     flexGrow: 1,
+    ...physicalStyleDirection,
   },
 });
-
-export { RtlTextTokens };

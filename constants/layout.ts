@@ -1,12 +1,17 @@
 import { I18nManager, Platform, type TextStyle, type ViewStyle } from 'react-native';
 
 import {
+  LTR_VALUE_TEXT,
+  LTR_VALUE_TEXT_END,
+  mergeLtrValueEndTextStyle,
   mergeLtrValueTextStyle,
   mergeRtlBlockTextStyle,
   mergeRtlHeadingTextStyle,
+  physicalStyleDirection,
   RTL_BLOCK_CONTAINER,
   RTL_BLOCK_TEXT,
   RTL_HEADING_TEXT,
+  TAB_ROUTE_PHYSICAL_LTR_ORDER,
   TAB_ROUTE_VISUAL_ORDER,
 } from '@/lib/rtlArchitecture';
 
@@ -14,21 +19,23 @@ import { Colors } from './theme';
 
 export {
   LTR_VALUE_TEXT,
+  LTR_VALUE_TEXT_END,
+  mergeLtrValueEndTextStyle,
   mergeLtrValueTextStyle,
   mergeRtlBlockTextStyle,
   mergeRtlHeadingTextStyle,
+  physicalStyleDirection,
   RTL_BLOCK_CONTAINER,
   RTL_BLOCK_TEXT,
   RTL_HEADING_TEXT,
+  TAB_ROUTE_PHYSICAL_LTR_ORDER,
   TAB_ROUTE_VISUAL_ORDER,
 } from '@/lib/rtlArchitecture';
 
 /**
- * Horizontal flex that places the first child on the Hebrew start (right).
- * Reads current I18nManager.isRTL — does not force or change global RTL.
- * Call at style-build / render time (not once at module load).
+ * @deprecated Do not use — reads I18nManager and encourages row-reverse double reversal.
+ * Use {@link physicalLtrRow} + documented child order instead.
  */
-/** @deprecated Use {@link TAB_ROUTE_VISUAL_ORDER} + {@link physicalLtrRow} instead. */
 export function hebrewStartFlexDirection(): 'row' | 'row-reverse' {
   return I18nManager.isRTL ? 'row' : 'row-reverse';
 }
@@ -172,6 +179,7 @@ export const baseScrollContent: ViewStyle = {
   maxWidth: Layout.contentMaxWidth,
   width: '100%',
   alignSelf: 'center',
+  ...physicalStyleDirection,
 };
 
 /** Stretch container so right-aligned Hebrew text spans the full content width. */
@@ -179,21 +187,16 @@ export const rtlContent: ViewStyle = {
   ...RTL_BLOCK_CONTAINER,
 };
 
-/** Native-only `direction: 'ltr'` — RN Web rejects `direction` on View styles. */
-const physicalLtrDirection: ViewStyle = Platform.select<ViewStyle>({
-  web: {},
-  default: { direction: 'ltr' },
-}) ?? {};
-
 /**
  * Row laid out in physical LTR regardless of app RTL — prevents Android mirroring
  * from flipping label/time or title/icon positions. Pair with explicit textAlign.
+ * Child order: first child = physical left, last child = physical right.
  */
 export const physicalLtrRow: ViewStyle = {
   flexDirection: 'row',
   width: '100%',
   alignSelf: 'stretch',
-  ...physicalLtrDirection,
+  ...physicalStyleDirection,
 };
 
 /** Hebrew label on the physical right, LTR value on the physical left. */
@@ -216,7 +219,7 @@ export const hebrewText: TextStyle = {
   writingDirection: RTL_BLOCK_TEXT.writingDirection,
 };
 
-/** Explicit Hebrew text alignment — does not depend on I18nManager.isRTL. */
+/** Explicit Hebrew text alignment — physical right inside physicalStyleDirection ancestors. */
 export const rtlText: TextStyle = {
   ...RTL_BLOCK_TEXT,
 };
@@ -248,10 +251,12 @@ export const rtlInputText: TextStyle = {
   writingDirection: 'rtl',
 };
 
-/** Stretch content blocks so right-aligned text spans the card width. */
+/**
+ * Stretch content blocks so right-aligned text spans the card width.
+ * Includes physicalStyleDirection so Fabric does not mirror textAlign.
+ */
 export const rtlContentBlock: ViewStyle = {
-  alignSelf: 'stretch',
-  width: '100%',
+  ...RTL_BLOCK_CONTAINER,
 };
 
 /**
@@ -263,28 +268,21 @@ export const rtlHeadingText: TextStyle = {
 };
 
 /**
- * Physical right-to-left row — first child on the physical right, stable regardless of
- * I18nManager.isRTL (avoids Android double-mirror with flexDirection: 'row').
+ * @deprecated Use {@link physicalLtrRow} + explicit child order.
+ * Kept as an alias so older imports compile; does not use row-reverse.
  */
-/** @deprecated Use {@link physicalLtrRow} + explicit child order for nav controls. */
-export const physicalHebrewRow: ViewStyle = Platform.select<ViewStyle>({
-  web: physicalLtrRow,
-  default: {
-    flexDirection: 'row-reverse',
-    width: '100%',
-    alignSelf: 'stretch',
-    ...physicalLtrDirection,
-  },
-}) ?? physicalLtrRow;
-
-/** Tab bar — היום → לוח → תזכורות → הגדרות from physical right to left. */
-export const physicalHebrewTabBarRow: ViewStyle = {
-  ...physicalHebrewRow,
+export const physicalHebrewRow: ViewStyle = {
+  ...physicalLtrRow,
 };
 
-/** Bento / wrap grids — items flow from physical right, then wrap. */
+/** Tab bar — physical LTR child order via {@link TAB_ROUTE_PHYSICAL_LTR_ORDER}. */
+export const physicalHebrewTabBarRow: ViewStyle = {
+  ...physicalLtrRow,
+};
+
+/** Bento / wrap grids — items flow physical left → right, then wrap. */
 export const physicalHebrewWrapRow: ViewStyle = {
-  ...physicalHebrewRow,
+  ...physicalLtrRow,
   flexWrap: 'wrap',
 };
 
@@ -301,16 +299,19 @@ export const rtlOptionRow: ViewStyle = {
 
 /** Left-side value text (times, numbers, emails). */
 export const rtlValueText: TextStyle = {
-  textAlign: 'left',
-  writingDirection: 'ltr',
-  flexShrink: 0,
+  ...LTR_VALUE_TEXT,
 };
 
-/** Left-side Hebrew value text. */
+/** Left-side Hebrew value text (physical left, RTL glyphs). */
 export const rtlValueTextRtl: TextStyle = {
   textAlign: 'left',
   writingDirection: 'rtl',
   flex: 1,
+};
+
+/** Gregorian / LTR line that stays on the physical right. */
+export const rtlLtrEndText: TextStyle = {
+  ...LTR_VALUE_TEXT_END,
 };
 
 export const screenSafeArea: ViewStyle = {

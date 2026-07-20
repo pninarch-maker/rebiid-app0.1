@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 
 import {
   NOTIFICATION_CATEGORY_DEFINITIONS,
@@ -9,6 +9,7 @@ import {
 } from '@/lib/notificationCategories';
 import type { AppSettings, NotificationCategoryPreference } from '@/lib/settingsTypes';
 import { NotificationCategorySheet } from '@/src/components/NotificationCategorySheet';
+import { RtlText } from '@/src/components/rtl';
 import { createNotificationCategoriesSectionStyles } from '@/src/theme/notificationSheetStyles';
 import { useTheme, useThemeStyles } from '@/src/theme/useTheme';
 
@@ -107,8 +108,10 @@ export function NotificationCategoriesSection({
                 accessibilityRole="button"
                 onPress={() => setActiveCategoryId(definition.id)}
                 style={({ pressed }) => [styles.rowTextPressable, pressed && styles.rowPressed]}>
-                <Text style={styles.rowTitle}>{definition.title}</Text>
-                <Text style={styles.rowDescription}>{definition.description}</Text>
+                <RtlText variant="heading" style={styles.rowTitle}>
+                  {definition.title}
+                </RtlText>
+                <RtlText style={styles.rowDescription}>{definition.description}</RtlText>
               </Pressable>
             </View>
           );

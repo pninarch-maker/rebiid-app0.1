@@ -35,8 +35,6 @@ export function createZmanimRowStyles(theme: AppTheme) {
     label: {
       fontSize: 15,
       color: colors.textSecondary,
-      textAlign: 'right',
-      writingDirection: 'rtl',
       ...rtlHeadingText,
     },
     time: {

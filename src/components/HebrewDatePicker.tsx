@@ -1,6 +1,6 @@
 import { HDate } from '@hebcal/core';
 import { useCallback, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 
 import { formatHebrewMonthTitle } from '@/src/engine/calendar/formatters';
 import {
@@ -13,6 +13,7 @@ import {
   toStoredHebrewMonthName,
 } from '@/lib/hebrewMonths';
 import { HebrewDatePickerCopy } from '@/lib/rebiidCopy';
+import { RtlCenteredText, RtlText } from '@/src/components/rtl';
 import { createHebrewDatePickerStyles } from '@/src/theme/hebrewDatePickerStyles';
 import { useThemeStyles } from '@/src/theme/useTheme';
 
@@ -132,34 +133,36 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
 
   return (
     <View>
-      <Text style={styles.fieldLabel}>{HebrewDatePickerCopy.fieldLabel}</Text>
+      <RtlText style={styles.fieldLabel}>{HebrewDatePickerCopy.fieldLabel}</RtlText>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={displayValue}
         onPress={openPicker}
         style={({ pressed }) => [styles.fieldButton, pressed && styles.fieldButtonPressed]}>
-        <Text style={styles.fieldValue}>{displayValue}</Text>
+        <RtlText style={styles.fieldValue}>{displayValue}</RtlText>
       </Pressable>
 
       <Modal visible={visible} transparent animationType="fade" onRequestClose={closePicker}>
         <View style={styles.overlay}>
           <View style={styles.sheet}>
-            <Text style={styles.monthTitle}>{monthMeta.title}</Text>
+            <RtlText variant="heading" style={styles.monthTitle}>
+              {monthMeta.title}
+            </RtlText>
 
             <View style={styles.navRow}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={HebrewDatePickerCopy.prevMonth}
-                style={styles.navButton}
-                onPress={() => setMonthAnchor((current) => shiftHebrewMonth(current, -1))}>
-                <Text style={styles.navButtonText}>{HebrewDatePickerCopy.prevMonth}</Text>
-              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={HebrewDatePickerCopy.nextMonth}
                 style={styles.navButton}
                 onPress={() => setMonthAnchor((current) => shiftHebrewMonth(current, 1))}>
-                <Text style={styles.navButtonText}>{HebrewDatePickerCopy.nextMonth}</Text>
+                <RtlText style={styles.navButtonText}>{HebrewDatePickerCopy.nextMonth}</RtlText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={HebrewDatePickerCopy.prevMonth}
+                style={styles.navButton}
+                onPress={() => setMonthAnchor((current) => shiftHebrewMonth(current, -1))}>
+                <RtlText style={styles.navButtonText}>{HebrewDatePickerCopy.prevMonth}</RtlText>
               </Pressable>
             </View>
 
@@ -167,7 +170,7 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
               <View style={styles.weekdayRow}>
                 {getVisualWeekdayHeadersLeftToRight().map((label) => (
                   <View key={label} style={styles.weekdayCell}>
-                    <Text style={styles.weekdayLabel}>{label}</Text>
+                    <RtlCenteredText style={styles.weekdayLabel}>{label}</RtlCenteredText>
                   </View>
                 ))}
               </View>
@@ -204,14 +207,14 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
                             hebrewDay: cell.day!,
                           })
                         }>
-                        <Text
+                        <RtlCenteredText
                           style={[
                             styles.dayNumeral,
                             cell.isToday && styles.dayNumeralToday,
                             selected && styles.dayNumeralSelected,
                           ]}>
                           {numeral}
-                        </Text>
+                        </RtlCenteredText>
                       </Pressable>
                     );
                   })}
@@ -222,17 +225,21 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
             <View style={styles.actionsRow}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={HebrewDatePickerCopy.cancel}
-                style={styles.cancelButton}
-                onPress={closePicker}>
-                <Text style={styles.cancelButtonText}>{HebrewDatePickerCopy.cancel}</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
                 accessibilityLabel={HebrewDatePickerCopy.confirm}
                 style={styles.confirmButton}
                 onPress={confirmSelection}>
-                <Text style={styles.confirmButtonText}>{HebrewDatePickerCopy.confirm}</Text>
+                <RtlCenteredText style={styles.confirmButtonText}>
+                  {HebrewDatePickerCopy.confirm}
+                </RtlCenteredText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={HebrewDatePickerCopy.cancel}
+                style={styles.cancelButton}
+                onPress={closePicker}>
+                <RtlCenteredText style={styles.cancelButtonText}>
+                  {HebrewDatePickerCopy.cancel}
+                </RtlCenteredText>
               </Pressable>
             </View>
           </View>

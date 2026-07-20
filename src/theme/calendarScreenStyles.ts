@@ -3,7 +3,6 @@ import { StyleSheet } from 'react-native';
 import { createElevation } from '@/constants/tokens';
 import {
   buttonText,
-  physicalHebrewRow,
   physicalLtrRow,
   Layout,
   rtlCardText,
@@ -44,7 +43,8 @@ export function createCalendarStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       ...rtlHeadingText,
     },
     navRow: {
-      ...physicalHebrewRow,
+      // physicalLtrRow: first child = physical left. Render [next, prev] in calendar.tsx.
+      ...physicalLtrRow,
       justifyContent: 'space-between',
       gap: 12,
       marginBottom: 16,

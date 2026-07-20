@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useScreenLayout } from '@/hooks/useScreenLayout';
-import { RtlBlock, RtlText } from '@/src/components/rtl';
+import { LtrValueText, RtlBlock, RtlText } from '@/src/components/rtl';
 
 interface HebrewDateHeroProps {
   greeting: string;
@@ -38,9 +38,11 @@ export function HebrewDateHero({
       <RtlText variant="heading" style={[styles.hebrewDate, { color: theme.colors.text }]}>
         {hebrewDate}
       </RtlText>
-      <RtlText variant="heading" style={[styles.gregorianDate, { color: theme.colors.textSecondary }]}>
+      <LtrValueText
+        align="end"
+        style={[styles.gregorianDate, { color: theme.colors.textSecondary }]}>
         {gregorianDate}
-      </RtlText>
+      </LtrValueText>
     </RtlBlock>
   );
 }
