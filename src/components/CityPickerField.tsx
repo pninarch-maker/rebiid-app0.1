@@ -26,8 +26,8 @@ export function CityPickerField({ selectedCity, onSelect }: CityPickerFieldProps
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.88 }]}
         onPress={() => setVisible(true)}>
         <View style={styles.row}>
-          <Text style={styles.value}>{selectedCity}</Text>
           <Text style={styles.chevron}>˅</Text>
+          <Text style={styles.value}>{selectedCity}</Text>
         </View>
       </Pressable>
 

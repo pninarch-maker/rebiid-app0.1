@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { rtlRow } from '@/constants/layout';
+import { physicalLtrRow } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useScreenLayout } from '@/hooks/useScreenLayout';
 import { useZmanimSettingsKey } from '@/hooks/useZmanimSettingsKey';
@@ -131,6 +131,9 @@ export default function TodayScreen() {
 
   const historyFabBottom = HISTORY_FAB_MARGIN + insets.bottom;
   const bentoItemStyle = isTwoColumnLayout ? styles.bentoHalf : styles.bentoFull;
+  const bentoOrder = isTwoColumnLayout
+    ? { reminder: 2, zmanim: 1, yahrzeits: 4, minhagim: 3 }
+    : { reminder: 1, zmanim: 2, yahrzeits: 3, minhagim: 4 };
 
   const [detailsReminder, setDetailsReminder] = useState<ReminderDetailsData | null>(null);
   const [detailsVisible, setDetailsVisible] = useState(false);
@@ -169,18 +172,21 @@ export default function TodayScreen() {
           <BentoCard
             title={HomeCopy.mainReminderTitle}
             icon="bell-outline"
-            style={bentoItemStyle}>
+            style={[bentoItemStyle, { order: bentoOrder.reminder } as ViewStyle]}>
             <ReminderCard reminder={mainReminder} onPress={openReminderDetails} />
           </BentoCard>
 
-          <BentoCard title={zmanimTitle} icon="weather-sunset" style={bentoItemStyle}>
+          <BentoCard
+            title={zmanimTitle}
+            icon="weather-sunset"
+            style={[bentoItemStyle, { order: bentoOrder.zmanim } as ViewStyle]}>
             <ZmanimCard rows={zmanimRows} />
           </BentoCard>
 
           <BentoCard
             title={HomeCopy.yahrzeitsCardTitle}
             icon="candle"
-            style={bentoItemStyle}>
+            style={[bentoItemStyle, { order: bentoOrder.yahrzeits } as ViewStyle]}>
             <KnowledgePreviewList
               emptyText={HomeCopy.emptyYahrzeits}
               expanded={expandedYahrzeits}
@@ -203,7 +209,7 @@ export default function TodayScreen() {
           <BentoCard
             title={HomeCopy.minhagimCardTitle}
             icon="star-outline"
-            style={bentoItemStyle}>
+            style={[bentoItemStyle, { order: bentoOrder.minhagim } as ViewStyle]}>
             {showMinhagimOnHome ? (
               <KnowledgePreviewList
                 emptyText={HomeCopy.emptyMinhagim}
@@ -266,12 +272,13 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   bentoGrid: {
-    ...rtlRow,
+    ...physicalLtrRow,
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
   bentoHalf: {
     width: '48%',
+    minWidth: 0,
   },
   bentoFull: {
     width: '100%',

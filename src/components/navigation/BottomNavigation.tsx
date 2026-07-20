@@ -1,10 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-import { hebrewStartFlexDirection } from '@/constants/layout';
+import { physicalLtrRow, TAB_ROUTE_VISUAL_ORDER } from '@/constants/layout';
 import { useTheme } from '@/src/theme/useTheme';
+import { RtlCenteredText } from '@/src/components/rtl';
 
 type TabIconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -15,25 +16,36 @@ const TAB_ICONS: Record<string, TabIconName> = {
   settings: 'cog-outline',
 };
 
+/**
+ * Tab bar: physicalLtrRow + explicit route order (no reverse + row-reverse combo).
+ * Visual right → left: היום | לוח | תזכורות | הגדרות
+ */
 export function BottomNavigation({ state, descriptors, navigation }: BottomTabBarProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const androidNavInset = Platform.OS === 'android' ? insets.bottom : 0;
   const height = theme.layout.tabBarHeight + androidNavInset;
 
+  const routesByName = Object.fromEntries(state.routes.map((route) => [route.name, route]));
+
   return (
     <View
       style={[
         styles.bar,
         {
-          flexDirection: hebrewStartFlexDirection(),
           height,
           paddingBottom: 16 + androidNavInset,
           backgroundColor: theme.colors.background,
           borderTopColor: theme.colors.divider,
         },
       ]}>
-      {state.routes.map((route, index) => {
+      {TAB_ROUTE_VISUAL_ORDER.map((routeName) => {
+        const route = routesByName[routeName];
+        if (!route) {
+          return null;
+        }
+
+        const index = state.routes.findIndex((r) => r.key === route.key);
         const { options } = descriptors[route.key];
         const label = options.title ?? route.name;
         const focused = state.index === index;
@@ -43,7 +55,7 @@ export function BottomNavigation({ state, descriptors, navigation }: BottomTabBa
         return (
           <Pressable
             key={route.key}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityState={focused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
             onPress={() => {
@@ -70,7 +82,7 @@ export function BottomNavigation({ state, descriptors, navigation }: BottomTabBa
               ]}>
               <MaterialCommunityIcons name={iconName} size={24} color={color} />
             </View>
-            <Text style={[styles.label, { color }]}>{label}</Text>
+            <RtlCenteredText style={[styles.label, { color }]}>{label}</RtlCenteredText>
           </Pressable>
         );
       })}
@@ -80,6 +92,7 @@ export function BottomNavigation({ state, descriptors, navigation }: BottomTabBa
 
 const styles = StyleSheet.create({
   bar: {
+    ...physicalLtrRow,
     borderTopWidth: 1,
     paddingTop: 8,
   },
@@ -100,7 +113,5 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '500',
-    textAlign: 'center',
-    writingDirection: 'rtl',
   },
 });

@@ -6,18 +6,20 @@ import type { HebrewMonth, HebrewMonthDay } from '@/src/engine/types';
  * Engine column order: index 0 = Sunday (א׳) … index 6 = Shabbat (ש׳).
  * Matches `HDate.getDay()` and `getHebrewMonth` week building.
  *
- * Visual layout: engine-order children with
- * `hebrewStartFlexDirection()` from `@/constants/layout`
- * → א׳ far right, ש׳ far left. Do not reorder `week.days`.
+ * Visual layout: render with {@link mapEngineWeekToVisualOrder} inside
+ * `physicalLtrRow` → physical left = ש׳, physical right = א׳.
+ * Do not reorder `week.days` in the engine.
  */
 export const CALENDAR_ENGINE_WEEKDAY_HEADERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'] as const;
+
+/** Visual column index 0 = physical left (ש׳) … 6 = physical right (א׳). */
+export const CALENDAR_VISUAL_COLUMN_ORDER = [6, 5, 4, 3, 2, 1, 0] as const;
 
 /** @deprecated Use {@link CALENDAR_ENGINE_WEEKDAY_HEADERS} */
 export const CALENDAR_WEEKDAY_HEADERS = CALENDAR_ENGINE_WEEKDAY_HEADERS;
 
 /**
- * @deprecated Prefer `hebrewStartFlexDirection()` from `@/constants/layout`
- * at style-build time. Kept for older call sites.
+ * @deprecated Use {@link physicalLtrRow} + {@link mapEngineWeekToVisualOrder}.
  */
 export const CALENDAR_GRID_ROW_DIRECTION = 'row' as const;
 
@@ -26,8 +28,39 @@ export function engineColumnToVisualPosition(engineColumnIndex: number): number 
   return 6 - engineColumnIndex;
 }
 
-export function getVisualWeekdayHeadersLeftToRight(): string[] {
-  return [...CALENDAR_ENGINE_WEEKDAY_HEADERS].reverse();
+/** Headers in physical left-to-right order: ש׳ … א׳. */
+export function getVisualWeekdayHeadersLeftToRight(): readonly string[] {
+  return CALENDAR_VISUAL_COLUMN_ORDER.map(
+    (engineIndex) => CALENDAR_ENGINE_WEEKDAY_HEADERS[engineIndex],
+  );
+}
+
+/**
+ * Map a 7-column engine week to physical left-to-right visual order.
+ * Use for weekday headers, date cells, empty cells, markers, and a11y DOM order.
+ */
+export function mapEngineWeekToVisualOrder<T>(engineWeek: readonly T[]): T[] {
+  if (engineWeek.length !== 7) {
+    throw new Error(`Calendar week must have 7 columns, got ${engineWeek.length}`);
+  }
+
+  return CALENDAR_VISUAL_COLUMN_ORDER.map((engineIndex) => engineWeek[engineIndex]);
+}
+
+/** Visual column (0 = left … 6 = right) where Hebrew day 1 appears, or -1 if absent. */
+export function findHebrewDayOneVisualColumn(month: HebrewMonth): number {
+  for (const week of month.weeks) {
+    for (let visualColumn = 0; visualColumn < 7; visualColumn += 1) {
+      const engineColumn = CALENDAR_VISUAL_COLUMN_ORDER[visualColumn];
+      const day = week.days[engineColumn];
+
+      if (day.isCurrentMonth && day.hebrewDayNumber === 1) {
+        return visualColumn;
+      }
+    }
+  }
+
+  return -1;
 }
 
 export function assertWeekHasSevenColumns(weekDays: HebrewMonthDay[]): void {
@@ -45,7 +78,12 @@ export function validateCalendarWeekLayoutConstants(): void {
 
   const visual = getVisualWeekdayHeadersLeftToRight();
   if (visual[0] !== 'ש' || visual[6] !== 'א') {
-    throw new Error(`Visual headers must be Sat→Sun, got ${visual.join('|')}`);
+    throw new Error(`Visual headers must be Sat→Sun left-to-right, got ${visual.join('|')}`);
+  }
+
+  const mapped = mapEngineWeekToVisualOrder([...CALENDAR_ENGINE_WEEKDAY_HEADERS]);
+  if (mapped.join('|') !== visual.join('|')) {
+    throw new Error('Visual column mapping does not match header order');
   }
 
   if (engineColumnToVisualPosition(0) !== 6 || engineColumnToVisualPosition(6) !== 0) {

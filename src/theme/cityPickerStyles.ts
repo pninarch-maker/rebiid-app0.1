@@ -4,9 +4,9 @@ import {
   Layout,
   Spacing,
   Typography,
-  hebrewStartFlexDirection,
   rtlCardText,
   rtlContentBlock,
+  rtlHeadingText,
   rtlInputText,
   rtlOptionRow,
   rtlTitle,
@@ -66,7 +66,6 @@ export function createCityPickerSheetStyles(theme: AppTheme, surfaces: ThemedSur
     },
     optionRow: {
       ...rtlOptionRow,
-      flexDirection: hebrewStartFlexDirection(),
       paddingVertical: Spacing.md,
       gap: Spacing.md,
     },
@@ -78,6 +77,9 @@ export function createCityPickerSheetStyles(theme: AppTheme, surfaces: ThemedSur
       flex: 1,
       fontSize: Typography.body,
       color: colors.text,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      ...rtlHeadingText,
       ...rtlCardText,
     },
     optionLabelSelected: {
@@ -88,6 +90,9 @@ export function createCityPickerSheetStyles(theme: AppTheme, surfaces: ThemedSur
       fontSize: 18,
       color: colors.primary,
       fontWeight: '700',
+      width: 24,
+      textAlign: 'left',
+      writingDirection: 'ltr',
     },
     emptyText: {
       fontSize: Typography.body,
@@ -107,13 +112,15 @@ export function createCityPickerFieldStyles(theme: AppTheme, surfaces: ThemedSur
     },
     row: {
       ...rtlOptionRow,
-      flexDirection: hebrewStartFlexDirection(),
     },
     value: {
       flex: 1,
       fontSize: Typography.body,
       fontWeight: '600',
       color: colors.text,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      ...rtlHeadingText,
       ...rtlCardText,
     },
     chevron: {

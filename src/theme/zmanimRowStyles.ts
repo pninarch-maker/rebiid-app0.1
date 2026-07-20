@@ -1,6 +1,12 @@
 import { StyleSheet } from 'react-native';
 
-import { hebrewStartFlexDirection, Layout, rtlCardText } from '@/constants/layout';
+import {
+  Layout,
+  physicalLabelValueRow,
+  rtlContent,
+  rtlHeadingText,
+  rtlValueText,
+} from '@/constants/layout';
 import type { AppTheme } from '@/src/components/theme/AppThemeProvider';
 
 export function createZmanimRowStyles(theme: AppTheme) {
@@ -8,16 +14,11 @@ export function createZmanimRowStyles(theme: AppTheme) {
 
   return StyleSheet.create({
     list: {
-      alignSelf: 'stretch',
-      width: '100%',
+      ...rtlContent,
     },
     row: {
-      // Child order [label, time] + hebrew-start flex → label far right, time far left.
-      width: '100%',
+      ...physicalLabelValueRow,
       alignSelf: 'stretch',
-      flexDirection: hebrewStartFlexDirection(),
-      alignItems: 'center',
-      justifyContent: 'space-between',
       paddingVertical: 8,
       minHeight: Layout.minTouchTarget,
       gap: 16,
@@ -26,14 +27,17 @@ export function createZmanimRowStyles(theme: AppTheme) {
       borderBottomWidth: 1,
       borderBottomColor: colors.divider,
     },
+    labelWrap: {
+      flex: 1,
+      minWidth: 0,
+      alignSelf: 'stretch',
+    },
     label: {
-      flexShrink: 1,
-      flexGrow: 1,
       fontSize: 15,
       color: colors.textSecondary,
       textAlign: 'right',
       writingDirection: 'rtl',
-      ...rtlCardText,
+      ...rtlHeadingText,
     },
     time: {
       flexShrink: 0,
@@ -42,18 +46,13 @@ export function createZmanimRowStyles(theme: AppTheme) {
       fontWeight: '600',
       color: colors.text,
       fontVariant: ['tabular-nums'],
-      textAlign: 'left',
-      writingDirection: 'ltr',
+      ...rtlValueText,
     },
     empty: {
       fontSize: 15,
       lineHeight: 22,
       color: colors.textSecondary,
-      textAlign: 'right',
-      writingDirection: 'rtl',
-      width: '100%',
-      alignSelf: 'stretch',
-      ...rtlCardText,
+      ...rtlHeadingText,
     },
   });
 }

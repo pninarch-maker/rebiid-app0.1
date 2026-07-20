@@ -7,6 +7,7 @@ import {
   ensureAndroidNotificationChannels,
   resolveCategoryAndroidChannelId,
   resolveNotificationChannelId,
+  shouldForegroundPlaySound,
 } from '@/lib/notificationChannels';
 import {
   getNotificationCategoryPreferenceForReminder,
@@ -35,9 +36,7 @@ import {
 setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound:
-      currentAppSettings.notificationSoundEnabled &&
-      currentAppSettings.notificationSound !== 'silent',
+    shouldPlaySound: shouldForegroundPlaySound(currentAppSettings),
     shouldSetBadge: false,
     shouldShowBanner: true,
     shouldShowList: true,
@@ -114,6 +113,7 @@ export async function syncLocalNotifications(): Promise<number> {
       );
 
       const content = buildCategoryNotificationContent(
+        currentAppSettings,
         categoryPreference,
         reminder.title,
         reminder.message,
@@ -127,7 +127,12 @@ export async function syncLocalNotifications(): Promise<number> {
           type: SchedulableTriggerInputTypes.DATE,
           date: triggerDate,
           ...(Platform.OS === 'android'
-            ? { channelId: resolveCategoryAndroidChannelId(categoryPreference) }
+            ? {
+                channelId: resolveCategoryAndroidChannelId(
+                  currentAppSettings,
+                  categoryPreference,
+                ),
+              }
             : {}),
         },
       });

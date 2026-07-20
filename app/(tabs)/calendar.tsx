@@ -5,7 +5,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   UIManager,
   View,
 } from 'react-native';
@@ -18,10 +17,15 @@ import { useThemeStyles } from '@/src/theme/useTheme';
 import { buildReminderDetails, type ReminderDetailsData } from '@/lib/reminderDetails';
 import { CalendarCopy } from '@/lib/rebiidCopy';
 import { useZmanimSettingsKey } from '@/hooks/useZmanimSettingsKey';
-import { CALENDAR_ENGINE_WEEKDAY_HEADERS } from '@/lib/calendarWeekLayout';
+import {
+  CALENDAR_VISUAL_COLUMN_ORDER,
+  getVisualWeekdayHeadersLeftToRight,
+  mapEngineWeekToVisualOrder,
+} from '@/lib/calendarWeekLayout';
 import { getCityFromZmanimSettingsKey, getZmanimDisplayRows, getZmanimDisplayTitle } from '@/lib/zmanimDisplay';
 import { ReminderDetailsModal } from '@/src/components/ReminderDetailsModal';
 import { ZmanimModal } from '@/src/components/ZmanimModal';
+import { LtrValueText, RtlCenteredText, RtlText } from '@/src/components/rtl';
 import { JewishEngine } from '@/src/engine/JewishEngine';
 import type { AppReminder } from '@/src/engine/reminders/types';
 import type { HebrewMonthDay } from '@/src/engine/types';
@@ -111,39 +115,40 @@ export default function CalendarScreen() {
         contentContainerStyle={[baseScrollContent, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.screenTitle}>{CalendarCopy.screenTitle}</Text>
-          <Text style={styles.monthTitle}>{month.monthTitleHebrew}</Text>
-          <Text style={styles.gregorianRange}>{month.gregorianRangeText}</Text>
+          <RtlText style={styles.screenTitle}>{CalendarCopy.screenTitle}</RtlText>
+          <RtlText variant="heading" style={styles.monthTitle}>{month.monthTitleHebrew}</RtlText>
+          <RtlText style={styles.gregorianRange}>{month.gregorianRangeText}</RtlText>
         </View>
 
         <View style={styles.navRow}>
           <Pressable style={styles.navButton} onPress={() => changeMonth(-1)}>
-            <Text style={styles.navButtonText}>חודש קודם</Text>
+            <RtlText style={styles.navButtonText}>חודש קודם</RtlText>
           </Pressable>
           <Pressable style={styles.navButton} onPress={() => changeMonth(1)}>
-            <Text style={styles.navButtonText}>חודש הבא</Text>
+            <RtlText style={styles.navButtonText}>חודש הבא</RtlText>
           </Pressable>
         </View>
 
         <View style={styles.calendarCard}>
           <View style={styles.weekdayRow}>
-            {CALENDAR_ENGINE_WEEKDAY_HEADERS.map((label) => (
+            {getVisualWeekdayHeadersLeftToRight().map((label) => (
               <View key={label} style={styles.weekdayCell}>
-                <Text style={styles.weekdayLabel}>{label}</Text>
+                <RtlCenteredText style={styles.weekdayLabel}>{label}</RtlCenteredText>
               </View>
             ))}
           </View>
 
           {month.weeks.map((week, weekIndex) => (
             <View key={`week-${weekIndex}`} style={styles.weekRow}>
-              {week.days.map((day, dayIndex) => {
+              {mapEngineWeekToVisualOrder(week.days).map((day, dayIndex) => {
+                const engineColumnIndex = CALENDAR_VISUAL_COLUMN_ORDER[dayIndex];
                 const isSelected =
                   selectedDay?.date?.getTime() === day.date?.getTime() && day.isCurrentMonth;
 
                 if (!day.isCurrentMonth) {
                   return (
                     <View
-                      key={`empty-${weekIndex}-${dayIndex}`}
+                      key={`empty-${weekIndex}-${engineColumnIndex}`}
                       style={styles.dayCell}
                     />
                   );
@@ -151,7 +156,7 @@ export default function CalendarScreen() {
 
                 return (
                   <Pressable
-                    key={day.date?.toISOString() ?? `day-${weekIndex}-${dayIndex}`}
+                    key={day.date?.toISOString() ?? `day-${weekIndex}-${engineColumnIndex}`}
                     style={[
                       styles.dayCell,
                       day.isToday && styles.dayCellToday,
@@ -159,15 +164,15 @@ export default function CalendarScreen() {
                       isSelected && styles.dayCellSelected,
                     ]}
                     onPress={() => selectDay(day)}>
-                    <Text
+                    <RtlCenteredText
                       style={[
                         styles.hebrewDayNumber,
                         day.isShabbat && styles.shabbatText,
                         day.isToday && styles.todayText,
                       ]}>
                       {day.hebrewDayNumber}
-                    </Text>
-                    <Text style={styles.gregorianDayNumber}>{day.gregorianDayNumber}</Text>
+                    </RtlCenteredText>
+                    <LtrValueText style={styles.gregorianDayNumber}>{day.gregorianDayNumber}</LtrValueText>
                     <View style={styles.markerRow}>
                       {hasRoshChodesh(day.holidays) ? (
                         <View style={[styles.markerDot, styles.roshChodeshDot]} />
@@ -199,29 +204,29 @@ export default function CalendarScreen() {
 
         {selectedDayDetails ? (
           <View style={styles.detailCard}>
-            <Text style={styles.detailHebrewDate}>{selectedDayDetails.hebrewDate}</Text>
-            <Text style={styles.detailGregorianDate}>{selectedDayDetails.gregorianDate}</Text>
+            <RtlText variant="heading" style={styles.detailHebrewDate}>{selectedDayDetails.hebrewDate}</RtlText>
+            <RtlText style={styles.detailGregorianDate}>{selectedDayDetails.gregorianDate}</RtlText>
 
             <Pressable
               style={styles.zmanimButton}
               onPress={() => setZmanimVisible(true)}>
-              <Text style={styles.zmanimButtonText}>{zmanimTitle}</Text>
+              <RtlText style={styles.zmanimButtonText}>{zmanimTitle}</RtlText>
             </Pressable>
 
             {selectedDayDetails.holidays.length > 0 ? (
               <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>{CalendarCopy.holidays}</Text>
+                <RtlText variant="heading" style={styles.detailSectionTitle}>{CalendarCopy.holidays}</RtlText>
                 {selectedDayDetails.holidays.map((holiday) => (
-                  <Text key={holiday} style={styles.detailItem}>
+                  <RtlText key={holiday} style={styles.detailItem}>
                     {holiday}
-                  </Text>
+                  </RtlText>
                 ))}
               </View>
             ) : null}
 
             {selectedDayDetails.reminders.length > 0 ? (
               <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>{CalendarCopy.reminders}</Text>
+                <RtlText variant="heading" style={styles.detailSectionTitle}>{CalendarCopy.reminders}</RtlText>
                 {selectedDayDetails.reminders.map((reminder) => (
                   <Pressable
                     key={reminder.id}
@@ -231,8 +236,8 @@ export default function CalendarScreen() {
                         openReminderDetails(reminder, selectedDay.date);
                       }
                     }}>
-                    <Text style={styles.detailItem}>{reminder.title}</Text>
-                    <Text style={styles.detailSubItem}>{reminder.message}</Text>
+                    <RtlText style={styles.detailItem}>{reminder.title}</RtlText>
+                    <RtlText style={styles.detailSubItem}>{reminder.message}</RtlText>
                   </Pressable>
                 ))}
               </View>
@@ -240,7 +245,7 @@ export default function CalendarScreen() {
 
             {selectedDayDetails.holidays.length === 0 &&
             selectedDayDetails.reminders.length === 0 ? (
-              <Text style={styles.detailEmpty}>{CalendarCopy.dayEmpty}</Text>
+              <RtlText style={styles.detailEmpty}>{CalendarCopy.dayEmpty}</RtlText>
             ) : null}
           </View>
         ) : null}

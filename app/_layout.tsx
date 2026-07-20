@@ -2,7 +2,7 @@ import { DefaultTheme, DarkTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo } from 'react';
-import { I18nManager, View } from 'react-native';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { initializeNotifications } from '@/lib/notifications';
@@ -33,7 +33,7 @@ function RootNavigation() {
   return (
     <>
       <ThemeProvider value={navigationTheme}>
-        <View style={{ flex: 1, width: '100%' }}>
+        <View style={{ flex: 1, width: '100%', alignSelf: 'stretch' }}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="about" options={{ headerShown: false }} />
@@ -47,11 +47,6 @@ function RootNavigation() {
 
 export default function RootLayout() {
   useEffect(() => {
-    if (!I18nManager.isRTL) {
-      I18nManager.allowRTL(true);
-      I18nManager.forceRTL(true);
-    }
-
     initializeNotifications();
   }, []);
 

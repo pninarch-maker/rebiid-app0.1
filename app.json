@@ -2,9 +2,9 @@
   "expo": {
     "name": "REBIID",
     "slug": "rebiid-app",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon-v2.png",
     "scheme": "luachmvp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,10 +13,10 @@
     },
     "android": {
       "package": "com.rebiid.app",
-      "versionCode": 2,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "foregroundImage": "./assets/images/android-icon-foreground-v2.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -33,12 +33,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-localization",
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/icon-v2.png",
           "color": "#3657D6",
-          "defaultChannel": "reminders-default",
+          "defaultChannel": "rebiid-sound-v3",
           "sounds": [
             "./assets/sounds/rebiid_gentle.wav"
           ],
@@ -64,6 +65,8 @@
     },
     "extra": {
       "router": {},
+      "supportsRTL": true,
+      "forcesRTL": true,
       "eas": {
         "projectId": "70e37a87-55c8-4700-9eaf-08747281689a"
       }
@@ -71,4 +74,3 @@
     "owner": "eli-deep-medias-team"
   }
 }
-

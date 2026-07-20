@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
-import { rtlHeadingText } from '@/constants/layout';
+import { rtlContent } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { HomeCopy } from '@/lib/rebiidCopy';
+import { RtlBlock, RtlText } from '@/src/components/rtl';
 
 interface KnowledgePreviewListProps<T> {
   items: T[];
@@ -29,15 +30,19 @@ export function KnowledgePreviewList<T>({
   const theme = useAppTheme();
 
   if (items.length === 0) {
-    return <Text style={[styles.empty, { color: theme.colors.textSecondary }]}>{emptyText}</Text>;
+    return (
+      <RtlBlock style={rtlContent}>
+        <RtlText style={[styles.empty, { color: theme.colors.textSecondary }]}>{emptyText}</RtlText>
+      </RtlBlock>
+    );
   }
 
   const visibleItems = expanded ? items : items.slice(0, previewLimit);
 
   return (
-    <View style={styles.list}>
+    <RtlBlock style={styles.list}>
       {visibleItems.map((item, index) => (
-        <View
+        <RtlBlock
           key={itemKey(item, index)}
           style={[
             styles.item,
@@ -46,8 +51,8 @@ export function KnowledgePreviewList<T>({
               borderBottomWidth: 1,
             },
           ]}>
-          {renderItem(item)}
-        </View>
+          <RtlBlock style={rtlContent}>{renderItem(item)}</RtlBlock>
+        </RtlBlock>
       ))}
       {items.length > previewLimit ? (
         <Pressable
@@ -57,24 +62,28 @@ export function KnowledgePreviewList<T>({
             styles.showMore,
             pressed && { opacity: theme.motion.pressOpacity },
           ]}>
-          <Text style={[styles.showMoreText, { color: theme.colors.primary }]}>
+          <RtlText style={[styles.showMoreText, { color: theme.colors.primary }]}>
             {expanded ? 'הצג פחות' : HomeCopy.showMore}
-          </Text>
+          </RtlText>
         </Pressable>
       ) : null}
-    </View>
+    </RtlBlock>
   );
 }
 
 export function KnowledgeItemTitle({ children }: { children: string }) {
   const theme = useAppTheme();
-  return <Text style={[styles.itemTitle, { color: theme.colors.text }]}>{children}</Text>;
+  return (
+    <RtlText variant="heading" style={[styles.itemTitle, { color: theme.colors.text }]}>
+      {children}
+    </RtlText>
+  );
 }
 
 export function KnowledgeItemBody({ children }: { children: string }) {
   const theme = useAppTheme();
   return (
-    <Text style={[styles.itemBody, { color: theme.colors.textSecondary }]}>{children}</Text>
+    <RtlText style={[styles.itemBody, { color: theme.colors.textSecondary }]}>{children}</RtlText>
   );
 }
 
@@ -86,13 +95,10 @@ const styles = StyleSheet.create({
   item: {
     gap: 3,
     paddingVertical: 8,
-    alignSelf: 'stretch',
-    width: '100%',
   },
   empty: {
     fontSize: 15,
     lineHeight: 22,
-    ...rtlHeadingText,
   },
   showMore: {
     marginTop: 8,
@@ -104,16 +110,13 @@ const styles = StyleSheet.create({
   showMoreText: {
     fontSize: 13,
     fontWeight: '600',
-    ...rtlHeadingText,
   },
   itemTitle: {
     fontSize: 15,
     fontWeight: '600',
-    ...rtlHeadingText,
   },
   itemBody: {
     fontSize: 12,
     lineHeight: 20,
-    ...rtlHeadingText,
   },
 });

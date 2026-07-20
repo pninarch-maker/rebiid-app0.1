@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useScreenLayout } from '@/hooks/useScreenLayout';
@@ -10,6 +10,7 @@ import {
 import { EmptyCopy, RemindersScreenCopy } from '@/lib/rebiidCopy';
 import { formatRelativeReminderLabel } from '@/lib/reminderRelativeTime';
 import { ReminderDetailsModal } from '@/src/components/ReminderDetailsModal';
+import { RtlText } from '@/src/components/rtl';
 import { createRemindersStyles } from '@/src/theme/remindersScreenStyles';
 import { useThemeStyles } from '@/src/theme/useTheme';
 import { JewishEngine } from '@/src/engine/JewishEngine';
@@ -48,22 +49,22 @@ export default function RemindersScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>{RemindersScreenCopy.title}</Text>
-          <Text style={styles.subtitle}>{RemindersScreenCopy.subtitle}</Text>
+          <RtlText variant="heading" style={styles.title}>{RemindersScreenCopy.title}</RtlText>
+          <RtlText style={styles.subtitle}>{RemindersScreenCopy.subtitle}</RtlText>
         </View>
 
         {groupedDays.length === 0 ? (
           <View style={[styles.dayCard, styles.emptyCard]}>
-            <Text style={styles.emptyText}>{EmptyCopy.upcomingReminders}</Text>
+            <RtlText style={styles.emptyText}>{EmptyCopy.upcomingReminders}</RtlText>
           </View>
         ) : (
           groupedDays.map((dayGroup) => (
             <View key={dayGroup.dateKey} style={styles.dayCard}>
               <View style={styles.dayHeader}>
-                <Text style={styles.hebrewDate}>{dayGroup.hebrewDate}</Text>
-                <Text style={styles.gregorianDate}>
+                <RtlText variant="heading" style={styles.hebrewDate}>{dayGroup.hebrewDate}</RtlText>
+                <RtlText style={styles.gregorianDate}>
                   {`${dayGroup.gregorianDate} · ${dayGroup.dayOfWeek}`}
-                </Text>
+                </RtlText>
               </View>
 
               {dayGroup.reminders.map((reminder, index) => (
@@ -75,11 +76,11 @@ export default function RemindersScreen() {
                     pressed && styles.reminderItemPressed,
                   ]}
                   onPress={() => openReminderDetails(reminder)}>
-                  <Text style={styles.reminderTitle}>{reminder.title}</Text>
-                  <Text style={styles.relativeTime}>
+                  <RtlText variant="heading" style={styles.reminderTitle}>{reminder.title}</RtlText>
+                  <RtlText style={styles.relativeTime}>
                     {formatRelativeReminderLabel(reminder)}
-                  </Text>
-                  <Text style={styles.reminderMessage}>{reminder.message}</Text>
+                  </RtlText>
+                  <RtlText style={styles.reminderMessage}>{reminder.message}</RtlText>
                 </Pressable>
               ))}
             </View>

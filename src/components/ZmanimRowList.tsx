@@ -1,6 +1,7 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { ZmanimDisplayRow } from '@/lib/zmanimDisplay';
+import { LtrValueText, RtlText } from '@/src/components/rtl';
 import { createZmanimRowStyles } from '@/src/theme/zmanimRowStyles';
 import { useThemeStyles } from '@/src/theme/useTheme';
 
@@ -9,12 +10,16 @@ interface ZmanimRowListProps {
   emptyText?: string;
 }
 
-/** Shared zmanim rows — Hebrew label on the right, time on the left. */
+/** Shared zmanim rows — Hebrew label physical right, LTR time physical left. */
 export function ZmanimRowList({ rows, emptyText }: ZmanimRowListProps) {
   const styles = useThemeStyles(createZmanimRowStyles);
 
   if (rows.length === 0) {
-    return emptyText ? <Text style={styles.empty}>{emptyText}</Text> : null;
+    return emptyText ? (
+      <View style={styles.list}>
+        <RtlText style={styles.empty}>{emptyText}</RtlText>
+      </View>
+    ) : null;
   }
 
   return (
@@ -23,8 +28,12 @@ export function ZmanimRowList({ rows, emptyText }: ZmanimRowListProps) {
         <View
           key={row.label}
           style={[styles.row, index < rows.length - 1 && styles.rowBorder]}>
-          <Text style={styles.label}>{row.label}</Text>
-          <Text style={styles.time}>{row.time}</Text>
+          <LtrValueText style={styles.time}>{row.time}</LtrValueText>
+          <View style={styles.labelWrap}>
+            <RtlText inRow style={styles.label}>
+              {row.label}
+            </RtlText>
+          </View>
         </View>
       ))}
     </View>

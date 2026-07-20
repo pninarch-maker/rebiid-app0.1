@@ -6,110 +6,94 @@ import {
   type NotificationContentInput,
 } from '@/lib/localNotifications';
 
-import type { AppSettings, NotificationSound } from './settingsTypes';
 import type { NotificationCategoryPreference } from './notificationCategories';
+import {
+  DEFAULT_NOTIFICATION_CHANNEL_ID,
+  NOTIFICATION_CHANNEL_IDS,
+  REBIID_GENTLE_SOUND,
+  migrateNotificationMode,
+  resolveContentSoundForMode,
+  resolveEffectiveNotificationMode,
+  resolveNotificationChannelId,
+  resolveNotificationChannelIdForMode,
+  shouldPlaySoundForMode,
+  vibrationPatternForMode,
+  type NotificationMode,
+} from './notificationMode';
+import type { AppSettings } from './settingsTypes';
 
 // REBIID intentionally does not use remote push notifications.
 // All reminders are scheduled locally on the device.
 
-/** Custom sound basename registered via expo-notifications `sounds` in app.json. */
-export const REBIID_GENTLE_SOUND = 'rebiid_gentle.wav';
-
-/**
- * Android channel ids. Sound binding is immutable after first create ג€” bump the
- * gentle channel version when changing the custom sound (v2 ג†’ v3, ג€¦).
- */
-export const NOTIFICATION_CHANNELS = {
-  default: 'reminders-default',
-  silent: 'reminders-silent',
-  /** Custom gentle WAV ג€” new id so devices with old `reminders-gentle` get the sound. */
-  gentle: 'rebiid-reminders-gentle-v2',
-  classic: 'reminders-classic',
-} as const;
-
-const CHANNEL_LABELS: Record<NotificationSound, string> = {
-  default: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳',
-  silent: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳©׳§׳˜',
-  gentle: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳¦׳׳™׳ ׳¢׳“׳™׳',
-  classic: '׳×׳–׳›׳•׳¨׳•׳× ג€” ׳§׳׳׳¡׳™',
+export {
+  DEFAULT_NOTIFICATION_CHANNEL_ID,
+  NOTIFICATION_CHANNEL_IDS,
+  REBIID_GENTLE_SOUND,
+  resolveNotificationChannelId,
+  resolveNotificationChannelIdForMode,
+  type NotificationMode,
 };
 
-export function shouldPlayNotificationSound(settings: AppSettings): boolean {
-  return settings.notificationSoundEnabled && settings.notificationSound !== 'silent';
-}
-
-/** Content / channel sound value for the selected preference. */
-export function resolveNotificationSoundFile(
-  sound: NotificationSound,
-  playSound: boolean,
-): string | false {
-  if (!playSound || sound === 'silent') {
-    return false;
-  }
-
-  if (sound === 'gentle') {
-    return REBIID_GENTLE_SOUND;
-  }
-
-  return 'default';
-}
-
-export function resolveNotificationChannelId(settings: AppSettings): string {
-  if (!shouldPlayNotificationSound(settings)) {
-    return NOTIFICATION_CHANNELS.silent;
-  }
-
-  switch (settings.notificationSound) {
-    case 'gentle':
-      return NOTIFICATION_CHANNELS.gentle;
-    case 'classic':
-      return NOTIFICATION_CHANNELS.classic;
-    case 'default':
-    default:
-      return NOTIFICATION_CHANNELS.default;
-  }
-}
+const CHANNEL_LABELS: Record<NotificationMode, { name: string; description: string }> = {
+  rebiid_sound: {
+    name: 'תזכורות — צליל REBIID',
+    description: 'צליל מותאם של REBIID עם רטט',
+  },
+  device_sound: {
+    name: 'תזכורות — צליל מהמכשיר',
+    description: 'בחר צליל התראה בהגדרות Android',
+  },
+  vibration_only: {
+    name: 'תזכורות — רטט בלבד',
+    description: 'רטט ללא צליל',
+  },
+  silent: {
+    name: 'תזכורות — שקט',
+    description: 'ללא צליל וללא רטט',
+  },
+};
 
 export async function ensureAndroidNotificationChannels(
-  settings: AppSettings,
+  _settings: AppSettings,
 ): Promise<void> {
   if (Platform.OS !== 'android') {
     return;
   }
 
-  const vibrationPattern = settings.notificationVibrationEnabled
-    ? [0, 250, 250, 250]
-    : [0];
-
-  const baseOptions = {
-    importance: AndroidImportance.HIGH,
-    enableVibrate: settings.notificationVibrationEnabled,
-    vibrationPattern,
-  };
+  const vibrationPattern = [0, 250, 250, 250];
 
   try {
-    await setNotificationChannelAsync(NOTIFICATION_CHANNELS.default, {
-      ...baseOptions,
-      name: CHANNEL_LABELS.default,
-      sound: 'default',
-    });
-
-    await setNotificationChannelAsync(NOTIFICATION_CHANNELS.gentle, {
-      ...baseOptions,
-      name: CHANNEL_LABELS.gentle,
-      sound: REBIID_GENTLE_SOUND,
+    await setNotificationChannelAsync(NOTIFICATION_CHANNEL_IDS.rebiidSound, {
+      name: CHANNEL_LABELS.rebiid_sound.name,
+      description: CHANNEL_LABELS.rebiid_sound.description,
       importance: AndroidImportance.HIGH,
+      sound: REBIID_GENTLE_SOUND,
+      enableVibrate: true,
+      vibrationPattern,
     });
 
-    await setNotificationChannelAsync(NOTIFICATION_CHANNELS.classic, {
-      ...baseOptions,
-      name: CHANNEL_LABELS.classic,
+    await setNotificationChannelAsync(NOTIFICATION_CHANNEL_IDS.deviceSound, {
+      name: CHANNEL_LABELS.device_sound.name,
+      description: CHANNEL_LABELS.device_sound.description,
+      importance: AndroidImportance.HIGH,
       sound: 'default',
+      enableVibrate: true,
+      vibrationPattern,
     });
 
-    await setNotificationChannelAsync(NOTIFICATION_CHANNELS.silent, {
-      ...baseOptions,
-      name: CHANNEL_LABELS.silent,
+    await setNotificationChannelAsync(NOTIFICATION_CHANNEL_IDS.vibrationOnly, {
+      name: CHANNEL_LABELS.vibration_only.name,
+      description: CHANNEL_LABELS.vibration_only.description,
+      importance: AndroidImportance.HIGH,
+      sound: undefined,
+      enableVibrate: true,
+      vibrationPattern,
+    });
+
+    await setNotificationChannelAsync(NOTIFICATION_CHANNEL_IDS.silent, {
+      name: CHANNEL_LABELS.silent.name,
+      description: CHANNEL_LABELS.silent.description,
+      importance: AndroidImportance.DEFAULT,
       sound: undefined,
       enableVibrate: false,
       vibrationPattern: [0],
@@ -119,79 +103,63 @@ export async function ensureAndroidNotificationChannels(
   }
 }
 
-export function buildCategoryNotificationContent(
-  preference: NotificationCategoryPreference,
+function buildContentForMode(
+  mode: NotificationMode,
   title: string,
   body: string,
   data?: Record<string, unknown>,
+  categoryPreference?: NotificationCategoryPreference,
 ): NotificationContentInput {
-  const playSound = shouldCategoryPlaySound(preference);
-  const vibrate = shouldCategoryVibrate(preference);
-  const vibrationPattern = vibrate ? [0, 250, 250, 250] : [0];
-  const sound = resolveNotificationSoundFile(preference.sound, playSound);
+  let effectiveMode = mode;
+
+  if (categoryPreference?.deliveryMode === 'sound_only') {
+    effectiveMode =
+      mode === 'vibration_only' || mode === 'silent'
+        ? 'rebiid_sound'
+        : mode;
+  }
+
+  const sound = resolveContentSoundForMode(effectiveMode);
+  let vibrate = vibrationPatternForMode(effectiveMode);
+
+  if (categoryPreference?.deliveryMode === 'sound_only') {
+    vibrate = [0];
+  }
+
+  if (
+    categoryPreference &&
+    !categoryPreference.vibrationEnabled &&
+    categoryPreference.deliveryMode !== 'vibration_only'
+  ) {
+    vibrate = [0];
+  }
 
   return {
     title,
     body,
     data,
     sound,
-    ...(Platform.OS === 'android' ? { vibrate: vibrationPattern } : {}),
+    ...(Platform.OS === 'android' ? { vibrate } : {}),
   };
 }
 
-function shouldCategoryPlaySound(preference: NotificationCategoryPreference): boolean {
-  if (preference.deliveryMode === 'disabled') {
-    return false;
-  }
-
-  if (preference.deliveryMode === 'vibration_only' || preference.deliveryMode === 'center_only') {
-    return false;
-  }
-
-  if (preference.deliveryMode === 'sound_only' || preference.deliveryMode === 'full') {
-    return preference.sound !== 'silent';
-  }
-
-  return false;
+export function buildCategoryNotificationContent(
+  settings: AppSettings,
+  preference: NotificationCategoryPreference,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+): NotificationContentInput {
+  const mode = resolveEffectiveNotificationMode(settings, preference);
+  return buildContentForMode(mode, title, body, data, preference);
 }
 
-function shouldCategoryVibrate(preference: NotificationCategoryPreference): boolean {
-  if (!preference.vibrationEnabled || preference.deliveryMode === 'disabled') {
-    return false;
-  }
-
-  if (preference.deliveryMode === 'sound_only' || preference.deliveryMode === 'center_only') {
-    return false;
-  }
-
-  return (
-    preference.deliveryMode === 'full' ||
-    preference.deliveryMode === 'silent' ||
-    preference.deliveryMode === 'vibration_only'
-  );
-}
-
-function resolveCategoryChannelId(preference: NotificationCategoryPreference): string {
-  if (!shouldCategoryPlaySound(preference)) {
-    return NOTIFICATION_CHANNELS.silent;
-  }
-
-  switch (preference.sound) {
-    case 'gentle':
-      return NOTIFICATION_CHANNELS.gentle;
-    case 'classic':
-      return NOTIFICATION_CHANNELS.classic;
-    case 'default':
-    default:
-      return NOTIFICATION_CHANNELS.default;
-  }
-}
-
-/** Android channel id for a category preference (Expo 54: set on the trigger). */
 export function resolveCategoryAndroidChannelId(
+  settings: AppSettings,
   preference: NotificationCategoryPreference,
 ): string {
-  return resolveCategoryChannelId(preference);
+  const mode = resolveEffectiveNotificationMode(settings, preference);
+  return resolveNotificationChannelIdForMode(mode);
 }
 
 export function buildNotificationContent(
@@ -200,19 +168,15 @@ export function buildNotificationContent(
   body: string,
   data?: Record<string, unknown>,
 ): NotificationContentInput {
-  const playSound = shouldPlayNotificationSound(settings);
-  const sound = resolveNotificationSoundFile(settings.notificationSound, playSound);
-
-  return {
-    title,
-    body,
-    data,
-    sound,
-    ...(Platform.OS === 'android'
-      ? {
-          vibrate: settings.notificationVibrationEnabled ? [0, 250, 250, 250] : [0],
-        }
-      : {}),
-  };
+  const mode = resolveEffectiveNotificationMode(settings);
+  return buildContentForMode(mode, title, body, data);
 }
 
+export function shouldForegroundPlaySound(settings: AppSettings): boolean {
+  return shouldPlaySoundForMode(resolveEffectiveNotificationMode(settings));
+}
+
+/** @deprecated Use notificationMode migration instead. */
+export function shouldPlayNotificationSound(settings: AppSettings): boolean {
+  return shouldPlaySoundForMode(migrateNotificationMode(settings));
+}

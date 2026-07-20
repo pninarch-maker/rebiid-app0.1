@@ -6,9 +6,11 @@ import {
   Spacing,
   Typography,
   buttonText,
-  hebrewStartFlexDirection,
+  physicalControlRow,
   rtlCardText,
+  rtlContent,
   rtlContentBlock,
+  rtlHeadingText,
   rtlOptionRow,
   rtlTitle,
 } from '@/constants/layout';
@@ -47,6 +49,7 @@ export function createNotificationCategorySheetStyles(theme: AppTheme, surfaces:
       fontWeight: '700',
       color: colors.text,
       marginBottom: Spacing.xs,
+      ...rtlHeadingText,
       ...rtlTitle,
     },
     subtitle: {
@@ -54,6 +57,7 @@ export function createNotificationCategorySheetStyles(theme: AppTheme, surfaces:
       color: colors.textSecondary,
       marginBottom: Spacing.lg,
       lineHeight: 22,
+      ...rtlHeadingText,
       ...rtlCardText,
     },
     scrollArea: {
@@ -65,6 +69,7 @@ export function createNotificationCategorySheetStyles(theme: AppTheme, surfaces:
       color: colors.textSecondary,
       marginBottom: Spacing.sm,
       marginTop: Spacing.sm,
+      ...rtlHeadingText,
       ...rtlTitle,
     },
     group: {
@@ -77,7 +82,6 @@ export function createNotificationCategorySheetStyles(theme: AppTheme, surfaces:
     },
     optionRow: {
       ...rtlOptionRow,
-      flexDirection: hebrewStartFlexDirection(),
       paddingHorizontal: Spacing.lg,
       paddingVertical: Spacing.md,
       gap: Spacing.md,
@@ -90,6 +94,9 @@ export function createNotificationCategorySheetStyles(theme: AppTheme, surfaces:
       flex: 1,
       fontSize: Typography.cardBody,
       color: colors.text,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      ...rtlHeadingText,
       ...rtlCardText,
     },
     optionLabelSelected: {
@@ -115,16 +122,19 @@ export function createNotificationCategorySheetStyles(theme: AppTheme, surfaces:
       backgroundColor: colors.primary,
     },
     toggleRow: {
-      ...rtlOptionRow,
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalControlRow,
       paddingHorizontal: Spacing.lg,
       paddingVertical: Spacing.sm,
       gap: Spacing.md,
+      justifyContent: 'space-between',
     },
     toggleLabel: {
       flex: 1,
       fontSize: Typography.cardBody,
       color: colors.text,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      ...rtlHeadingText,
       ...rtlCardText,
     },
     saveButton: {
@@ -155,7 +165,6 @@ export function createNotificationCategoriesSectionStyles(theme: AppTheme, surfa
     },
     categoryRow: {
       ...rtlOptionRow,
-      flexDirection: hebrewStartFlexDirection(),
       paddingHorizontal: Spacing.lg,
       paddingVertical: Spacing.md,
       gap: Spacing.md,
@@ -167,7 +176,7 @@ export function createNotificationCategoriesSectionStyles(theme: AppTheme, surfa
     rowTextPressable: {
       flex: 1,
       gap: 4,
-      ...rtlContentBlock,
+      ...rtlContent,
       minHeight: Layout.minTouchTarget,
       justifyContent: 'center',
     },
@@ -178,12 +187,14 @@ export function createNotificationCategoriesSectionStyles(theme: AppTheme, surfa
       fontSize: Typography.cardTitle,
       fontWeight: '600',
       color: colors.text,
+      ...rtlHeadingText,
       ...rtlTitle,
     },
     rowDescription: {
       fontSize: Typography.caption,
       color: colors.textSecondary,
       lineHeight: 20,
+      ...rtlHeadingText,
       ...rtlCardText,
     },
   });

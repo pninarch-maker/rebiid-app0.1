@@ -16,12 +16,15 @@ import { setCurrentAppSettings, currentAppSettings } from './appState';
 import { normalizeAppearancePreference } from './appearancePreference';
 import { NOTIFICATION_CATEGORY_DEFINITIONS } from './notificationCategories';
 import { normalizeNotificationCategoryPreferences } from './notificationCategoryPrefs';
+import {
+  legacyFieldsForNotificationMode,
+  migrateNotificationMode,
+} from './notificationMode';
 import type {
   AppSettings,
   NotificationCategoryPreferences,
   AddressGender,
   CustomReminder,
-  NotificationSound,
   ZmanimCalculationProfile,
 } from './settingsTypes';
 import {
@@ -78,6 +81,8 @@ export async function updateAppSettings(
 
 function normalizeAppSettings(settings: Partial<AppSettings>): AppSettings {
   const cityRecord = getCityByName(settings.city ?? DEFAULT_APP_SETTINGS.city);
+  const notificationMode = migrateNotificationMode(settings);
+  const legacyNotification = legacyFieldsForNotificationMode(notificationMode);
 
   return {
     city: cityRecord.name,
@@ -94,17 +99,15 @@ function normalizeAppSettings(settings: Partial<AppSettings>): AppSettings {
     customReminders: Array.isArray(settings.customReminders)
       ? settings.customReminders.map(normalizeCustomReminder)
       : [],
-    notificationSoundEnabled:
-      settings.notificationSoundEnabled ?? DEFAULT_APP_SETTINGS.notificationSoundEnabled,
-    notificationVibrationEnabled:
-      settings.notificationVibrationEnabled ?? DEFAULT_APP_SETTINGS.notificationVibrationEnabled,
-    notificationSound: normalizeNotificationSound(settings.notificationSound),
+    notificationMode,
+    notificationSoundEnabled: legacyNotification.notificationSoundEnabled,
+    notificationVibrationEnabled: legacyNotification.notificationVibrationEnabled,
+    notificationSound: legacyNotification.notificationSound,
     notificationCategoryPreferences: normalizeNotificationCategoryPreferences(
       settings.notificationCategoryPreferences,
       {
-        notificationSound: normalizeNotificationSound(settings.notificationSound),
-        notificationVibrationEnabled:
-          settings.notificationVibrationEnabled ?? DEFAULT_APP_SETTINGS.notificationVibrationEnabled,
+        notificationSound: legacyNotification.notificationSound,
+        notificationVibrationEnabled: legacyNotification.notificationVibrationEnabled,
         defaultReminderOffsetMinutes:
           settings.defaultReminderOffsetMinutes ?? DEFAULT_APP_SETTINGS.defaultReminderOffsetMinutes,
       },
@@ -127,13 +130,6 @@ function normalizeZmanimProfile(value: unknown): ZmanimCalculationProfile {
     return 'magen_avraham';
   }
   return 'gra';
-}
-
-function normalizeNotificationSound(value: unknown): NotificationSound {
-  if (value === 'gentle' || value === 'classic' || value === 'silent' || value === 'default') {
-    return value;
-  }
-  return DEFAULT_APP_SETTINGS.notificationSound;
 }
 
 function normalizeCustomReminder(reminder: CustomReminder): CustomReminder {

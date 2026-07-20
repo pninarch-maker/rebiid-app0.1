@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
 import {
-  hebrewStartFlexDirection,
+  physicalLabelValueRow,
+  rtlHeadingText,
   rtlSubtitle,
   rtlValueText,
   rtlValueTextRtl,
@@ -34,11 +35,9 @@ export function RtlLabelValueRow({
     <View
       style={[
         styles.row,
-        { flexDirection: hebrewStartFlexDirection() },
         bordered && { borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
         style,
       ]}>
-      <Text style={[styles.label, { color: theme.colors.textMuted }, labelStyle]}>{label}</Text>
       <Text
         style={[
           valueDirection === 'ltr' ? styles.valueLtr : styles.valueRtl,
@@ -47,6 +46,7 @@ export function RtlLabelValueRow({
         ]}>
         {value}
       </Text>
+      <Text style={[styles.label, { color: theme.colors.textMuted }, labelStyle]}>{label}</Text>
     </View>
   );
 }
@@ -67,25 +67,27 @@ export function RtlLabelValueRowCustom({
   const theme = useTheme();
 
   return (
-    <View style={[styles.row, { flexDirection: hebrewStartFlexDirection() }, style]}>
-      <Text style={[styles.label, { color: theme.colors.textMuted }, labelStyle]}>{label}</Text>
+    <View style={[styles.row, style]}>
       <View style={styles.valueWrap}>{value}</View>
+      <Text style={[styles.label, { color: theme.colors.textMuted }, labelStyle]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...physicalLabelValueRow,
     gap: 12,
     paddingVertical: 6,
-    width: '100%',
-    alignSelf: 'stretch',
   },
   label: {
-    flexShrink: 0,
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
     fontSize: 14,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    ...rtlHeadingText,
     ...rtlSubtitle,
   },
   valueLtr: {
@@ -97,9 +99,10 @@ const styles = StyleSheet.create({
     ...rtlValueTextRtl,
     fontSize: 15,
     fontWeight: '500',
+    textAlign: 'left',
   },
   valueWrap: {
-    flex: 1,
+    flexShrink: 0,
     alignItems: 'flex-start',
   },
 });

@@ -198,10 +198,14 @@ export const RtlTextTokens = {
   title: {
     textAlign: 'right',
     writingDirection: 'rtl',
+    width: '100%',
+    alignSelf: 'stretch',
   } satisfies TextStyle,
   body: {
     textAlign: 'right',
     writingDirection: 'rtl',
+    width: '100%',
+    alignSelf: 'stretch',
   } satisfies TextStyle,
   button: {
     textAlign: 'center',

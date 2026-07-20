@@ -7,8 +7,9 @@ import type {
   NotificationDeliveryMode,
 } from './notificationCategories';
 import { createDefaultNotificationCategoryPreferences } from './notificationCategoryPrefs';
+import type { NotificationMode } from './notificationMode';
 
-export type { AdvanceReminderMinutes, NotificationCategoryId, NotificationCategoryPreference, NotificationDeliveryMode };
+export type { AdvanceReminderMinutes, NotificationCategoryId, NotificationCategoryPreference, NotificationDeliveryMode, NotificationMode };
 export type { ZmanimCalculationProfile };
 
 export type HavdalahMethod = 'regular' | 'rabbeinu_tam';
@@ -52,8 +53,12 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   defaultReminderOffsetMinutes: number;
   customReminders: CustomReminder[];
+  notificationMode: NotificationMode;
+  /** @deprecated Synced from notificationMode for backward compatibility. */
   notificationSoundEnabled: boolean;
+  /** @deprecated Synced from notificationMode for backward compatibility. */
   notificationVibrationEnabled: boolean;
+  /** @deprecated Synced from notificationMode for backward compatibility. */
   notificationSound: NotificationSound;
   notificationCategoryPreferences: NotificationCategoryPreferences;
   zmanimProfile: ZmanimCalculationProfile;
@@ -71,11 +76,12 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   defaultReminderOffsetMinutes: 60,
   customReminders: [],
+  notificationMode: 'rebiid_sound',
   notificationSoundEnabled: true,
   notificationVibrationEnabled: true,
-  notificationSound: 'default',
+  notificationSound: 'gentle',
   notificationCategoryPreferences: createDefaultNotificationCategoryPreferences({
-    notificationSound: 'default',
+    notificationSound: 'gentle',
     notificationVibrationEnabled: true,
     defaultReminderOffsetMinutes: 60,
   }),

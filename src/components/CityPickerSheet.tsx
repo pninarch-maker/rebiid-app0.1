@@ -80,10 +80,10 @@ export function CityPickerSheet({
                       styles.optionRow,
                       index < filteredCities.length - 1 && styles.optionRowBorder,
                     ]}>
+                    {selected ? <Text style={styles.checkmark}>✓</Text> : <View style={{ width: 24 }} />}
                     <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
                       {city.name}
                     </Text>
-                    {selected ? <Text style={styles.checkmark}>✓</Text> : null}
                   </Pressable>
                 );
               })

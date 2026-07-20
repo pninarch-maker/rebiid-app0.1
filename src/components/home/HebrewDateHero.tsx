@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { rtlHeadingText } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useScreenLayout } from '@/hooks/useScreenLayout';
+import { RtlBlock, RtlText } from '@/src/components/rtl';
 
 interface HebrewDateHeroProps {
   greeting: string;
@@ -17,22 +18,30 @@ export function HebrewDateHero({
   gregorianDate,
 }: HebrewDateHeroProps) {
   const theme = useAppTheme();
+  const { horizontalPadding } = useScreenLayout();
 
   return (
-    <View
+    <RtlBlock
       style={[
         styles.hero,
         {
           backgroundColor: theme.heroBackground,
+          paddingHorizontal: horizontalPadding,
         },
       ]}>
-      <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>{greeting}</Text>
-      <Text style={[styles.subtitle, { color: theme.colors.text }]}>{subtitle}</Text>
-      <Text style={[styles.hebrewDate, { color: theme.colors.text }]}>{hebrewDate}</Text>
-      <Text style={[styles.gregorianDate, { color: theme.colors.textSecondary }]}>
+      <RtlText variant="heading" style={[styles.greeting, { color: theme.colors.textSecondary }]}>
+        {greeting}
+      </RtlText>
+      <RtlText variant="heading" style={[styles.subtitle, { color: theme.colors.text }]}>
+        {subtitle}
+      </RtlText>
+      <RtlText variant="heading" style={[styles.hebrewDate, { color: theme.colors.text }]}>
+        {hebrewDate}
+      </RtlText>
+      <RtlText variant="heading" style={[styles.gregorianDate, { color: theme.colors.textSecondary }]}>
         {gregorianDate}
-      </Text>
-    </View>
+      </RtlText>
+    </RtlBlock>
   );
 }
 
@@ -40,31 +49,25 @@ const styles = StyleSheet.create({
   hero: {
     paddingTop: 8,
     paddingBottom: 24,
-    alignSelf: 'stretch',
-    width: '100%',
   },
   greeting: {
     fontSize: 22,
     fontWeight: '600',
     marginBottom: 4,
-    ...rtlHeadingText,
   },
   subtitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
-    ...rtlHeadingText,
   },
   hebrewDate: {
     fontSize: 44,
     fontWeight: '700',
     lineHeight: 52,
     marginBottom: 4,
-    ...rtlHeadingText,
   },
   gregorianDate: {
     fontSize: 18,
     fontWeight: '500',
-    ...rtlHeadingText,
   },
 });

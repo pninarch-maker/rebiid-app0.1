@@ -3,6 +3,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { createElevation } from '@/constants/tokens';
+import { rtlContent } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { RtlCardHeader } from '@/src/components/RtlCardHeader';
 
@@ -41,9 +42,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: 'stretch',
     width: '100%',
+    alignItems: 'stretch',
   },
   body: {
-    width: '100%',
-    alignSelf: 'stretch',
+    ...rtlContent,
   },
 });

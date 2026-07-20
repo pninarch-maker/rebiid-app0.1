@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { rtlHeadingText } from '@/constants/layout';
+import { rtlContent } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { HomeCopy } from '@/lib/rebiidCopy';
+import { RtlBlock, RtlText } from '@/src/components/rtl';
 
 interface TodayStatusProps {
   hasMainReminder: boolean;
@@ -16,7 +17,7 @@ export function TodayStatus({ hasMainReminder }: TodayStatusProps) {
   }
 
   return (
-    <View
+    <RtlBlock
       style={[
         styles.wrap,
         {
@@ -24,10 +25,10 @@ export function TodayStatus({ hasMainReminder }: TodayStatusProps) {
           borderColor: theme.colors.cardBorder,
         },
       ]}>
-      <Text style={[styles.text, { color: theme.colors.textSecondary }]}>
+      <RtlText style={[styles.text, { color: theme.colors.textSecondary }]}>
         {HomeCopy.quietMessage}
-      </Text>
-    </View>
+      </RtlText>
+    </RtlBlock>
   );
 }
 
@@ -38,12 +39,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 16,
-    alignSelf: 'stretch',
-    width: '100%',
   },
   text: {
     fontSize: 15,
     lineHeight: 22,
-    ...rtlHeadingText,
   },
 });

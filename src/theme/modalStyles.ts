@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import { Layout, buttonText, rtlCardText, rtlContentBlock, rtlLabelValueRow, rtlOptionRow, rtlRow, rtlSubtitle, rtlTitle, rtlValueText, rtlValueTextRtl } from '@/constants/layout';
+import { Layout, buttonText, physicalLabelValueRow, rtlCardText, rtlContentBlock, rtlHeadingText, rtlSubtitle, rtlTitle, rtlValueTextRtl } from '@/constants/layout';
 import type { AppTheme } from '@/src/components/theme/AppThemeProvider';
 import { ON_PRIMARY, type ThemedSurfaces } from '@/src/theme/themedSurfaces';
 
@@ -25,12 +25,14 @@ export function createCenteredModalStyles(theme: AppTheme, surfaces: ThemedSurfa
       fontWeight: '700',
       color: colors.text,
       marginBottom: 8,
+      ...rtlHeadingText,
       ...rtlTitle,
     },
     subtitle: {
       fontSize: 15,
       color: colors.textMuted,
       marginBottom: 16,
+      ...rtlHeadingText,
       ...rtlSubtitle,
     },
     message: {
@@ -38,6 +40,7 @@ export function createCenteredModalStyles(theme: AppTheme, surfaces: ThemedSurfa
       color: colors.textSecondary,
       lineHeight: 24,
       marginBottom: 16,
+      ...rtlHeadingText,
       ...rtlCardText,
     },
     section: {
@@ -45,8 +48,7 @@ export function createCenteredModalStyles(theme: AppTheme, surfaces: ThemedSurfa
       ...rtlContentBlock,
     },
     row: {
-      ...rtlLabelValueRow,
-      alignItems: 'center',
+      ...physicalLabelValueRow,
       gap: 12,
       paddingVertical: 6,
       borderBottomWidth: 1,
@@ -57,15 +59,23 @@ export function createCenteredModalStyles(theme: AppTheme, surfaces: ThemedSurfa
       borderBottomColor: colors.divider,
     },
     label: {
+      flex: 1,
+      flexShrink: 1,
+      minWidth: 0,
       fontSize: 14,
       color: colors.textMuted,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      ...rtlHeadingText,
       ...rtlSubtitle,
-      flexShrink: 0,
     },
     value: {
+      flexShrink: 0,
       fontSize: 15,
       color: colors.text,
       fontWeight: '500',
+      textAlign: 'left',
+      writingDirection: 'rtl',
       ...rtlValueTextRtl,
     },
     time: {
@@ -128,18 +138,26 @@ export function createCenteredModalStyles(theme: AppTheme, surfaces: ThemedSurfa
       ...rtlCardText,
     },
     detailRow: {
-      ...rtlLabelValueRow,
+      ...physicalLabelValueRow,
       gap: 12,
     },
     detailLabel: {
+      flex: 1,
+      flexShrink: 1,
+      minWidth: 0,
       fontSize: 13,
       color: colors.textSecondary,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      ...rtlHeadingText,
       ...rtlSubtitle,
-      flexShrink: 0,
     },
     detailValue: {
+      flexShrink: 0,
       fontSize: 13,
       color: colors.text,
+      textAlign: 'left',
+      writingDirection: 'rtl',
       ...rtlValueTextRtl,
     },
     historyOverlay: {

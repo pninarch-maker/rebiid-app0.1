@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { hebrewStartFlexDirection } from '@/constants/layout';
+import { rtlContent } from '@/constants/layout';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { PhysicalRow, RtlText } from '@/src/components/rtl';
 
 interface RtlCardHeaderProps {
   title: string;
@@ -13,8 +14,8 @@ interface RtlCardHeaderProps {
 }
 
 /**
- * Home / bento card header: icon on the far right, Hebrew title immediately to its left.
- * Child order [icon, title] + hebrew-start flex — no View `direction` style.
+ * Home / bento card header: icon on the physical far right, Hebrew title right-aligned.
+ * physicalLtrRow + [title, icon] — native RTL must not mirror this row again.
  */
 export function RtlCardHeader({
   title,
@@ -26,44 +27,39 @@ export function RtlCardHeader({
   const theme = useAppTheme();
 
   return (
-    <View
-      style={[
-        styles.header,
-        { flexDirection: hebrewStartFlexDirection() },
-        style,
-      ]}>
-      {icon ? (
-        <MaterialCommunityIcons
-          name={icon}
-          size={iconSize}
-          color={theme.colors.primary}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        />
-      ) : null}
-      <Text
-        style={[styles.title, { color: theme.colors.primary }, titleStyle]}
-        accessibilityRole="header">
-        {title}
-      </Text>
+    <View style={[styles.header, rtlContent, style]}>
+      <PhysicalRow style={styles.row}>
+        <RtlText
+          inRow
+          variant="heading"
+          style={[styles.title, { color: theme.colors.primary }, titleStyle]}
+          accessibilityRole="header">
+          {title}
+        </RtlText>
+        {icon ? (
+          <MaterialCommunityIcons
+            name={icon}
+            size={iconSize}
+            color={theme.colors.primary}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+        ) : null}
+      </PhysicalRow>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    width: '100%',
-    alignSelf: 'stretch',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    gap: 8,
     marginBottom: 12,
   },
+  row: {
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
-    flexShrink: 1,
     fontSize: 16,
     fontWeight: '600',
-    textAlign: 'right',
-    writingDirection: 'rtl',
   },
 });

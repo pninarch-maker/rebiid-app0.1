@@ -6,7 +6,6 @@ import { ButtonCopy, SettingsCopy } from '@/lib/rebiidCopy';
 import type { NotificationCategoryDefinition } from '@/lib/notificationCategories';
 import {
   ADVANCE_REMINDER_OPTIONS,
-  CATEGORY_SOUND_OPTIONS,
   DELIVERY_MODE_OPTIONS,
 } from '@/lib/notificationCategoryPrefs';
 import type { NotificationCategoryPreference } from '@/lib/settingsTypes';
@@ -42,10 +41,10 @@ function OptionRow({
       accessibilityState={{ selected }}
       onPress={onPress}
       style={[styles.optionRow, !isLast && styles.optionRowBorder]}>
-      <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>{label}</Text>
       <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
         {selected ? <View style={styles.radioInner} /> : null}
       </View>
+      <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>{label}</Text>
     </Pressable>
   );
 }
@@ -69,13 +68,13 @@ function ToggleRow({
 }) {
   return (
     <View style={[styles.toggleRow, !isLast && styles.optionRowBorder]}>
-      <Text style={styles.toggleLabel}>{label}</Text>
       <Switch
         value={value}
         onValueChange={onValueChange}
         trackColor={switchTrack}
         thumbColor={switchThumb}
       />
+      <Text style={styles.toggleLabel}>{label}</Text>
     </View>
   );
 }
@@ -119,20 +118,6 @@ export function NotificationCategorySheet({
                       isLast={index === DELIVERY_MODE_OPTIONS.length - 1}
                       styles={styles}
                       onPress={() => onChange({ ...preference, deliveryMode: option.key })}
-                    />
-                  ))}
-                </View>
-
-                <Text style={styles.sectionLabel}>{SettingsCopy.soundTitle}</Text>
-                <View style={styles.group}>
-                  {CATEGORY_SOUND_OPTIONS.map((option, index) => (
-                    <OptionRow
-                      key={option.key}
-                      label={option.label}
-                      selected={preference.sound === option.key}
-                      isLast={index === CATEGORY_SOUND_OPTIONS.length - 1}
-                      styles={styles}
-                      onPress={() => onChange({ ...preference, sound: option.key })}
                     />
                   ))}
                 </View>

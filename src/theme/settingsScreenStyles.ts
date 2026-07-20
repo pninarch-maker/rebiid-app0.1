@@ -3,9 +3,10 @@ import { StyleSheet, type TextStyle, type ViewStyle } from 'react-native';
 import {
   baseScrollContent,
   buttonText,
-  hebrewStartFlexDirection,
   Layout,
+  physicalLtrRow,
   rtlCardText,
+  rtlContent,
   rtlContentBlock,
   rtlHeadingText,
   rtlInputText,
@@ -109,7 +110,7 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       writingDirection: 'ltr',
     },
     aboutLinkRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalLtrRow,
       alignItems: 'center',
       gap: 12,
     },
@@ -140,7 +141,6 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
     card: { ...surfaces.baseCard },
     optionRow: {
       ...rtlOptionRow,
-      flexDirection: hebrewStartFlexDirection(),
       paddingVertical: 12,
     },
     optionRowBorder: {
@@ -148,9 +148,12 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       borderBottomColor: colors.divider,
     },
     optionLabel: {
+      flex: 1,
       fontSize: 17,
       color: colors.text,
-      ...rtlCardText,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      ...rtlHeadingText,
     },
     optionLabelSelected: {
       fontWeight: '600',
@@ -160,22 +163,29 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       fontSize: 18,
       color: colors.primary,
       fontWeight: '700',
+      width: 24,
+      textAlign: 'left',
+      writingDirection: 'ltr',
+    },
+    checkmarkSpacer: {
+      width: 24,
     },
     row: {
       ...rtlOptionRow,
-      flexDirection: hebrewStartFlexDirection(),
     },
-    rowText: { flex: 1, ...rtlContentBlock, gap: 4 },
+    rowText: { flex: 1, ...rtlContent, gap: 4 },
     rowTitle: {
       fontSize: 17,
       fontWeight: '600',
       color: colors.text,
+      ...rtlHeadingText,
       ...rtlTitle,
     },
     rowDescription: {
       fontSize: 14,
       color: colors.textSecondary,
       lineHeight: 20,
+      ...rtlHeadingText,
       ...rtlCardText,
     },
     customInputBlock: { marginTop: 12, gap: 8 },
@@ -219,7 +229,7 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       borderTopWidth: 1,
       borderTopColor: colors.divider,
       alignSelf: 'stretch',
-      alignItems: 'flex-start',
+      ...rtlContent,
     },
     addButtonText: {
       fontSize: 15,
@@ -230,7 +240,7 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
     },
     formBlock: { marginTop: 16, gap: 10 },
     monthRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalLtrRow,
       marginBottom: 4,
     },
     monthChip: {
@@ -271,7 +281,7 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       borderTopWidth: 1,
       borderTopColor: colors.divider,
       alignSelf: 'stretch',
-      alignItems: 'flex-start',
+      ...rtlContent,
       minHeight: 48,
       justifyContent: 'center',
     },

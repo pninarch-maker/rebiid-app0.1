@@ -1,5 +1,6 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { rtlContent } from '@/constants/layout';
 import { ButtonCopy, ModalCopy } from '@/lib/rebiidCopy';
 import type { ReminderDetailsData } from '@/lib/reminderDetails';
 import { RtlLabelValueRow } from '@/src/components/RtlLabelValueRow';
@@ -32,8 +33,10 @@ export function ReminderDetailsModal({
       <View style={styles.overlay}>
         <View style={styles.card}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>{reminder.title}</Text>
-            <Text style={styles.message}>{reminder.message}</Text>
+            <View style={rtlContent}>
+              <Text style={styles.title}>{reminder.title}</Text>
+              <Text style={styles.message}>{reminder.message}</Text>
+            </View>
 
             <View style={styles.section}>
               <RtlLabelValueRow bordered label={ModalCopy.hebrewDate} value={reminder.hebrewDate} />

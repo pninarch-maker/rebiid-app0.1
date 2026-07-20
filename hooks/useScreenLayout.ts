@@ -15,6 +15,8 @@ export function useScreenLayout() {
       /** Logical window width in dp (density-independent). */
       windowWidth: width,
       horizontalPadding: Math.max(Layout.screenPaddingMin, width * Layout.screenPaddingRatio),
+      /** Phones stay readable; tablets use full available width. */
+      contentMaxWidth: width >= bentoMinTwoColumnWidth ? undefined : Layout.contentMaxWidth,
       /**
        * Home bento: single column below 768dp; two columns at 768dp and above.
        * Based solely on logical window width.

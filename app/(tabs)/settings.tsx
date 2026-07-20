@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   Switch,
@@ -13,12 +14,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LtrValueText, RtlText } from '@/src/components/rtl';
+
 import { useScreenLayout } from '@/hooks/useScreenLayout';
 import { useAppearancePreference } from '@/hooks/useAppearancePreference';
 import { APP_META } from '@/lib/appInfo';
 import { getCityByKey } from '@/lib/cities';
 import { openEmailAddress } from '@/lib/contactLinks';
 import { rescheduleNotificationsAfterSettingsChange, enableNotifications, disableNotifications, scheduleTestNotification } from '@/lib/notifications';
+import { NOTIFICATION_MODE_OPTIONS, type NotificationMode } from '@/lib/notificationMode';
+import { openAndroidNotificationChannelSettings } from '@/lib/openNotificationChannelSettings';
 import {
   ButtonCopy,
   EmptyCopy,
@@ -135,16 +140,16 @@ function OffsetPicker({
               index < options.length - 1 && styles.optionRowBorder,
             ]}
             onPress={() => onChange(presetKeyToMinutes(option.key, customValue), customValue)}>
-            <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
+            {selected ? <Text style={styles.checkmark}>✓</Text> : <View style={styles.checkmarkSpacer} />}
+            <RtlText inRow style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
               {option.label}
-            </Text>
-            {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+            </RtlText>
           </Pressable>
         );
       })}
       {preset === 'custom' ? (
         <View style={styles.customInputBlock}>
-          <Text style={styles.inputLabel}>{customLabel}</Text>
+          <RtlText style={styles.inputLabel}>{customLabel}</RtlText>
           <TextInput
             style={styles.input}
             keyboardType="number-pad"
@@ -382,7 +387,7 @@ export default function SettingsScreen() {
   const handleUpdateNotificationPreferences = useCallback(
     async (
       preferences: AppSettings['notificationCategoryPreferences'],
-      options?: { reschedule?: boolean; notificationSound?: AppSettings['notificationSound'] },
+      options?: { reschedule?: boolean },
     ) => {
       if (!settings) {
         return;
@@ -393,13 +398,28 @@ export default function SettingsScreen() {
         notificationCategoryPreferences: preferences,
       };
 
-      if (options?.notificationSound) {
-        nextSettings.notificationSound = options.notificationSound;
-        nextSettings.notificationSoundEnabled = options.notificationSound !== 'silent';
-      }
-
       await persistSettings(nextSettings);
       await loadReminderEngineSettings();
+    },
+    [persistSettings, settings],
+  );
+
+  const handleNotificationModeChange = useCallback(
+    async (mode: NotificationMode) => {
+      if (!settings || settings.notificationMode === mode) {
+        return;
+      }
+
+      const nextSettings: AppSettings = {
+        ...settings,
+        notificationMode: mode,
+      };
+
+      await persistSettings(nextSettings);
+
+      if (mode === 'device_sound' && Platform.OS === 'android') {
+        await openAndroidNotificationChannelSettings(mode);
+      }
     },
     [persistSettings, settings],
   );
@@ -556,14 +576,14 @@ export default function SettingsScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>{SettingsCopy.title}</Text>
+          <RtlText variant="heading" style={styles.title}>{SettingsCopy.title}</RtlText>
           {syncing ? <ActivityIndicator color={theme.colors.primary} /> : null}
         </View>
 
-        <Text style={styles.intro}>{SettingsCopy.intro}</Text>
+        <RtlText style={styles.intro}>{SettingsCopy.intro}</RtlText>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.addressTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.addressHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.addressTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.addressHelper}</RtlText>
         <View style={styles.card}>
           {ADDRESS_GENDER_OPTIONS.map((option, index) => {
             const selected = settings.addressGender === option.key;
@@ -576,24 +596,24 @@ export default function SettingsScreen() {
                   index < ADDRESS_GENDER_OPTIONS.length - 1 && styles.optionRowBorder,
                 ]}
                 onPress={() => handleAddressGender(option.key)}>
-                <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
+                {selected ? <Text style={styles.checkmark}>✓</Text> : <View style={styles.checkmarkSpacer} />}
+                <RtlText inRow style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
                   {option.label}
-                </Text>
-                {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+                </RtlText>
               </Pressable>
             );
           })}
         </View>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.cityTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.cityHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.cityTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.cityHelper}</RtlText>
         <CityPickerField
           selectedCity={settings.city}
           onSelect={(cityName) => void handleSelectCity(cityName)}
         />
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.candleTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.candleHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.candleTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.candleHelper}</RtlText>
         <View style={styles.card}>
           {[...CANDLE_LIGHTING_PRESETS.map(String), 'custom'].map((preset, index, arr) => {
             const selected = candlePreset === preset;
@@ -610,16 +630,16 @@ export default function SettingsScreen() {
                   index < arr.length - 1 && styles.optionRowBorder,
                 ]}
                 onPress={() => handleCandlePreset(preset)}>
-                <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
+                {selected ? <Text style={styles.checkmark}>✓</Text> : <View style={styles.checkmarkSpacer} />}
+                <RtlText inRow style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
                   {label}
-                </Text>
-                {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+                </RtlText>
               </Pressable>
             );
           })}
           {candlePreset === 'custom' ? (
             <View style={styles.customInputBlock}>
-              <Text style={styles.inputLabel}>כמה דקות לפני שקיעה?</Text>
+              <RtlText style={styles.inputLabel}>כמה דקות לפני שקיעה?</RtlText>
               <TextInput
                 style={styles.input}
                 keyboardType="number-pad"
@@ -631,50 +651,82 @@ export default function SettingsScreen() {
           ) : null}
         </View>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.havdalahTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.havdalahHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.havdalahTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.havdalahHelper}</RtlText>
         <View style={styles.card}>
           <Pressable
             style={[styles.optionRow, styles.optionRowBorder]}
             onPress={() => handleHavdalah('regular')}>
-            <Text
+            {settings.havdalahMethod === 'regular' ? (
+              <Text style={styles.checkmark}>✓</Text>
+            ) : (
+              <View style={styles.checkmarkSpacer} />
+            )}
+            <RtlText
               style={[
                 styles.optionLabel,
                 settings.havdalahMethod === 'regular' && styles.optionLabelSelected,
               ]}>
               {SettingsCopy.havdalahRegular}
-            </Text>
-            {settings.havdalahMethod === 'regular' ? (
-              <Text style={styles.checkmark}>✓</Text>
-            ) : null}
+            </RtlText>
           </Pressable>
           <Pressable style={styles.optionRow} onPress={() => handleHavdalah('rabbeinu_tam')}>
-            <Text
+            {settings.havdalahMethod === 'rabbeinu_tam' ? (
+              <Text style={styles.checkmark}>✓</Text>
+            ) : (
+              <View style={styles.checkmarkSpacer} />
+            )}
+            <RtlText
               style={[
                 styles.optionLabel,
                 settings.havdalahMethod === 'rabbeinu_tam' && styles.optionLabelSelected,
               ]}>
               {SettingsCopy.havdalahRabbeinuTam}
-            </Text>
-            {settings.havdalahMethod === 'rabbeinu_tam' ? (
-              <Text style={styles.checkmark}>✓</Text>
-            ) : null}
+            </RtlText>
           </Pressable>
         </View>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.notificationsTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.notificationsHelper}</Text>
-        <Text style={styles.privacyNote}>{SettingsCopy.notificationsPrivacyNote}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.notificationsTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.notificationsHelper}</RtlText>
+        <RtlText style={styles.privacyNote}>{SettingsCopy.notificationsPrivacyNote}</RtlText>
         <View style={styles.card}>
           <View style={styles.row}>
-            <Text style={styles.rowTitle}>{SettingsCopy.notificationsToggle}</Text>
             <Switch
               value={settings.notificationsEnabled}
               onValueChange={handleNotificationsToggle}
               trackColor={theme.surfaces.switchTrack}
               thumbColor={theme.surfaces.switchThumb(settings.notificationsEnabled)}
             />
+            <RtlText style={styles.rowTitle}>{SettingsCopy.notificationsToggle}</RtlText>
           </View>
+        </View>
+
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.notificationModeHelper}</RtlText>
+        <View style={styles.card}>
+          {NOTIFICATION_MODE_OPTIONS.map((option, index) => (
+            <Pressable
+              key={option.key}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: settings.notificationMode === option.key }}
+              style={[
+                styles.optionRow,
+                index < NOTIFICATION_MODE_OPTIONS.length - 1 && styles.optionRowBorder,
+              ]}
+              onPress={() => void handleNotificationModeChange(option.key)}>
+              {settings.notificationMode === option.key ? (
+                <Text style={styles.checkmark}>✓</Text>
+              ) : (
+                <View style={styles.checkmarkSpacer} />
+              )}
+              <RtlText
+                style={[
+                  styles.optionLabel,
+                  settings.notificationMode === option.key && styles.optionLabelSelected,
+                ]}>
+                {option.label}
+              </RtlText>
+            </Pressable>
+          ))}
           <Pressable
             style={styles.testButton}
             onPress={handleTestNotification}
@@ -682,38 +734,38 @@ export default function SettingsScreen() {
             {testingNotification ? (
               <ActivityIndicator color={theme.colors.primary} />
             ) : (
-              <Text style={styles.testButtonText}>{ButtonCopy.testNotification}</Text>
+              <RtlText style={styles.testButtonText}>{ButtonCopy.testNotification}</RtlText>
             )}
           </Pressable>
         </View>
 
-        <Text style={styles.sectionHelper}>{SettingsCopy.notificationsCategoriesHelper}</Text>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.notificationsCategoriesHelper}</RtlText>
         <NotificationCategoriesSection
           settings={settings}
           onUpdatePreferences={handleUpdateNotificationPreferences}
         />
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.minhagSegulahTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.minhagSegulahHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.minhagSegulahTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.minhagSegulahHelper}</RtlText>
         {minhagCategoryEnabled ? (
           <View style={styles.card}>
-            <Text style={styles.inputLabel}>{SettingsCopy.minhagSegulahTemplatesTitle}</Text>
+            <RtlText style={styles.inputLabel}>{SettingsCopy.minhagSegulahTemplatesTitle}</RtlText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.monthRow}>
               {MINHAG_SEGULAH_TEMPLATES.map((template) => (
                 <Pressable
                   key={template.id}
                   style={styles.monthChip}
                   onPress={() => handleApplyMinhagTemplate(template.title, template.message)}>
-                  <Text style={styles.monthChipText}>{template.title}</Text>
+                  <RtlText style={styles.monthChipText}>{template.title}</RtlText>
                 </Pressable>
               ))}
             </ScrollView>
 
-            <Text style={[styles.inputLabel, styles.minhagCustomTitle]}>
+            <RtlText style={[styles.inputLabel, styles.minhagCustomTitle]}>
               {SettingsCopy.minhagSegulahCustomTitle}
-            </Text>
+            </RtlText>
             {minhagReminders.length === 0 ? (
-              <Text style={styles.emptyText}>{EmptyCopy.personalReminders}</Text>
+              <RtlText style={styles.emptyText}>{EmptyCopy.personalReminders}</RtlText>
             ) : (
               minhagReminders.map((reminder, index) => (
                 <View
@@ -724,14 +776,14 @@ export default function SettingsScreen() {
                   ]}>
                   <View style={styles.row}>
                     <View style={styles.rowText}>
-                      <Text style={styles.rowTitle}>{reminder.title}</Text>
-                      <Text style={styles.rowDescription}>
+                      <RtlText style={styles.rowTitle}>{reminder.title}</RtlText>
+                      <RtlText style={styles.rowDescription}>
                         {formatHebrewCustomDateWithTime(
                           reminder.hebrewDay,
                           reminder.hebrewMonth,
                           reminder.time,
                         )}
-                      </Text>
+                      </RtlText>
                     </View>
                     <Switch
                       value={reminder.enabled}
@@ -740,9 +792,9 @@ export default function SettingsScreen() {
                       thumbColor={theme.surfaces.switchThumb(reminder.enabled)}
                     />
                   </View>
-                  <Text style={styles.rowDescription}>{reminder.message}</Text>
+                  <RtlText style={styles.rowDescription}>{reminder.message}</RtlText>
                   <Pressable onPress={() => handleDeleteCustomReminder(reminder.id)}>
-                    <Text style={styles.deleteText}>מחק תזכורת</Text>
+                    <RtlText style={styles.deleteText}>מחק תזכורת</RtlText>
                   </Pressable>
                 </View>
               ))
@@ -751,21 +803,21 @@ export default function SettingsScreen() {
             <Pressable
               style={styles.addButton}
               onPress={() => setShowMinhagForm((current) => !current)}>
-              <Text style={styles.addButtonText}>
+              <RtlText style={styles.addButtonText}>
                 {showMinhagForm ? ButtonCopy.closeForm : SettingsCopy.addMinhagReminder}
-              </Text>
+              </RtlText>
             </Pressable>
 
             {showMinhagForm ? (
               <View style={styles.formBlock}>
-                <Text style={styles.inputLabel}>כותרת</Text>
+                <RtlText style={styles.inputLabel}>כותרת</RtlText>
                 <TextInput
                   style={styles.input}
                   value={minhagForm.title}
                   onChangeText={(text) => setMinhagForm((current) => ({ ...current, title: text }))}
                   textAlign="right"
                 />
-                <Text style={styles.inputLabel}>הודעה</Text>
+                <RtlText style={styles.inputLabel}>הודעה</RtlText>
                 <TextInput
                   style={[styles.input, styles.multilineInput]}
                   value={minhagForm.message}
@@ -788,7 +840,7 @@ export default function SettingsScreen() {
                     }))
                   }
                 />
-                <Text style={styles.inputLabel}>שעה (HH:MM)</Text>
+                <RtlText style={styles.inputLabel}>שעה (HH:MM)</RtlText>
                 <TextInput
                   style={styles.input}
                   value={minhagForm.time}
@@ -796,7 +848,7 @@ export default function SettingsScreen() {
                   placeholder="09:00"
                   textAlign="right"
                 />
-                <Text style={styles.inputLabel}>מתי להזכיר?</Text>
+                <RtlText style={styles.inputLabel}>מתי להזכיר?</RtlText>
                 <OffsetPicker
                   allowDefault
                   styles={styles}
@@ -812,22 +864,22 @@ export default function SettingsScreen() {
                   }}
                 />
                 <Pressable style={styles.saveButton} onPress={handleSaveMinhagReminder}>
-                  <Text style={styles.saveButtonText}>{ButtonCopy.save}</Text>
+                  <RtlText style={styles.saveButtonText}>{ButtonCopy.save}</RtlText>
                 </Pressable>
               </View>
             ) : null}
           </View>
         ) : (
-          <Text style={styles.sectionHelper}>
+          <RtlText style={styles.sectionHelper}>
             הפעילו את קטגוריית «מנהגים וסגולות» בחלק ההתראות כדי להוסיף תזכורות מותאמות.
-          </Text>
+          </RtlText>
         )}
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.personalTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.personalHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.personalTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.personalHelper}</RtlText>
         <View style={styles.card}>
           {personalReminders.length === 0 ? (
-            <Text style={styles.emptyText}>{EmptyCopy.personalReminders}</Text>
+            <RtlText style={styles.emptyText}>{EmptyCopy.personalReminders}</RtlText>
           ) : (
             personalReminders.map((reminder, index) => (
               <View
@@ -838,14 +890,14 @@ export default function SettingsScreen() {
                 ]}>
                 <View style={styles.row}>
                   <View style={styles.rowText}>
-                    <Text style={styles.rowTitle}>{reminder.title}</Text>
-                    <Text style={styles.rowDescription}>
+                    <RtlText style={styles.rowTitle}>{reminder.title}</RtlText>
+                    <RtlText style={styles.rowDescription}>
                       {formatHebrewCustomDateWithTime(
                         reminder.hebrewDay,
                         reminder.hebrewMonth,
                         reminder.time,
                       )}
-                    </Text>
+                    </RtlText>
                   </View>
                   <Switch
                     value={reminder.enabled}
@@ -854,9 +906,9 @@ export default function SettingsScreen() {
                     thumbColor={theme.surfaces.switchThumb(reminder.enabled)}
                   />
                 </View>
-                <Text style={styles.rowDescription}>{reminder.message}</Text>
+                <RtlText style={styles.rowDescription}>{reminder.message}</RtlText>
                 <Pressable onPress={() => handleDeleteCustomReminder(reminder.id)}>
-                  <Text style={styles.deleteText}>מחק תזכורת</Text>
+                  <RtlText style={styles.deleteText}>מחק תזכורת</RtlText>
                 </Pressable>
               </View>
             ))
@@ -865,21 +917,21 @@ export default function SettingsScreen() {
           <Pressable
             style={styles.addButton}
             onPress={() => setShowReminderForm((current) => !current)}>
-            <Text style={styles.addButtonText}>
+            <RtlText style={styles.addButtonText}>
               {showReminderForm ? ButtonCopy.closeForm : ButtonCopy.addPersonalReminder}
-            </Text>
+            </RtlText>
           </Pressable>
 
           {showReminderForm ? (
             <View style={styles.formBlock}>
-              <Text style={styles.inputLabel}>כותרת</Text>
+              <RtlText style={styles.inputLabel}>כותרת</RtlText>
               <TextInput
                 style={styles.input}
                 value={reminderForm.title}
                 onChangeText={(text) => setReminderForm((current) => ({ ...current, title: text }))}
                 textAlign="right"
               />
-              <Text style={styles.inputLabel}>הודעה</Text>
+              <RtlText style={styles.inputLabel}>הודעה</RtlText>
               <TextInput
                 style={[styles.input, styles.multilineInput]}
                 value={reminderForm.message}
@@ -902,7 +954,7 @@ export default function SettingsScreen() {
                   }))
                 }
               />
-              <Text style={styles.inputLabel}>שעה (HH:MM)</Text>
+              <RtlText style={styles.inputLabel}>שעה (HH:MM)</RtlText>
               <TextInput
                 style={styles.input}
                 value={reminderForm.time}
@@ -910,7 +962,7 @@ export default function SettingsScreen() {
                 placeholder="09:00"
                 textAlign="right"
               />
-              <Text style={styles.inputLabel}>מתי להזכיר?</Text>
+              <RtlText style={styles.inputLabel}>מתי להזכיר?</RtlText>
               <OffsetPicker
                 allowDefault
                 styles={styles}
@@ -926,14 +978,14 @@ export default function SettingsScreen() {
                 }}
               />
               <Pressable style={styles.saveButton} onPress={handleSaveCustomReminder}>
-                <Text style={styles.saveButtonText}>{ButtonCopy.save}</Text>
+                <RtlText style={styles.saveButtonText}>{ButtonCopy.save}</RtlText>
               </Pressable>
             </View>
           ) : null}
         </View>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.appearanceTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.appearanceHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.appearanceTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.appearanceHelper}</RtlText>
         <View style={styles.card}>
           {APPEARANCE_PREFERENCE_OPTIONS.map((option, index) => {
             const selected = appearancePreference === option.key;
@@ -948,19 +1000,19 @@ export default function SettingsScreen() {
                   index < APPEARANCE_PREFERENCE_OPTIONS.length - 1 && styles.optionRowBorder,
                 ]}
                 onPress={() => void handleAppearancePreference(option.key)}>
-                <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
+                {selected ? <Text style={styles.checkmark}>✓</Text> : <View style={styles.checkmarkSpacer} />}
+                <RtlText inRow style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
                   {option.label}
-                </Text>
-                {selected ? <Text style={styles.checkmark}>✓</Text> : null}
+                </RtlText>
               </Pressable>
             );
           })}
         </View>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.accessibilityTitle}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.accessibilityTitle}</RtlText>
         <View style={styles.card}>
-          <Text style={styles.accessibilityText}>{SettingsCopy.accessibilityText}</Text>
-          <Text style={styles.accessibilityEmailLabel}>{SettingsCopy.accessibilityEmailLabel}</Text>
+          <RtlText style={styles.accessibilityText}>{SettingsCopy.accessibilityText}</RtlText>
+          <RtlText style={styles.accessibilityEmailLabel}>{SettingsCopy.accessibilityEmailLabel}</RtlText>
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={AccessibilityCopy.emailAccessibilityLabel}
@@ -976,23 +1028,23 @@ export default function SettingsScreen() {
                 }
               });
             }}>
-            <Text style={styles.accessibilityEmailLink}>{APP_META.email}</Text>
+            <LtrValueText style={styles.accessibilityEmailLink}>{APP_META.email}</LtrValueText>
           </Pressable>
         </View>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.privacyTitle}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.privacyTitle}</RtlText>
         <View style={[styles.card, styles.privacyCard]}>
-          <Text style={styles.privacyTagline}>{SettingsCopy.privacyTagline}</Text>
-          <Text style={styles.privacySummary}>{SettingsCopy.privacySummary}</Text>
+          <RtlText style={styles.privacyTagline}>{SettingsCopy.privacyTagline}</RtlText>
+          <RtlText style={styles.privacySummary}>{SettingsCopy.privacySummary}</RtlText>
           {SettingsCopy.privacyBullets.map((bullet) => (
-            <Text key={bullet} style={styles.privacyBullet}>
+            <RtlText key={bullet} style={styles.privacyBullet}>
               {`• ${bullet}`}
-            </Text>
+            </RtlText>
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>{SettingsCopy.aboutLinkTitle}</Text>
-        <Text style={styles.sectionHelper}>{SettingsCopy.aboutLinkHelper}</Text>
+        <RtlText style={styles.sectionTitle}>{SettingsCopy.aboutLinkTitle}</RtlText>
+        <RtlText style={styles.sectionHelper}>{SettingsCopy.aboutLinkHelper}</RtlText>
         <Pressable style={styles.card} onPress={() => router.push('/about')}>
           <View style={styles.aboutLinkRow}>
             <Image
@@ -1002,10 +1054,10 @@ export default function SettingsScreen() {
               accessibilityLabel={REBIID.name}
             />
             <View style={styles.aboutLinkText}>
-              <Text style={styles.aboutLinkLabel}>{REBIID.name}</Text>
-              <Text style={styles.aboutLinkSubtitle}>{REBIID.tagline}</Text>
+              <RtlText style={styles.aboutLinkLabel}>{REBIID.name}</RtlText>
+              <RtlText style={styles.aboutLinkSubtitle}>{REBIID.tagline}</RtlText>
             </View>
-            <Text style={styles.aboutLinkChevron}>‹</Text>
+            <RtlText style={styles.aboutLinkChevron}>‹</RtlText>
           </View>
         </Pressable>
       </ScrollView>

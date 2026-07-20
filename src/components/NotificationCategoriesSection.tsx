@@ -16,7 +16,7 @@ interface NotificationCategoriesSectionProps {
   settings: AppSettings;
   onUpdatePreferences: (
     preferences: AppSettings['notificationCategoryPreferences'],
-    options?: { reschedule?: boolean; notificationSound?: AppSettings['notificationSound'] },
+    options?: { reschedule?: boolean },
   ) => Promise<void>;
 }
 
@@ -61,10 +61,7 @@ export function NotificationCategoriesSection({
         nextPreferences[categoryId].enabled = true;
       }
 
-      await onUpdatePreferences(nextPreferences, {
-        reschedule: true,
-        notificationSound: nextPreferences[categoryId].sound,
-      });
+      await onUpdatePreferences(nextPreferences, { reschedule: true });
     },
     [onUpdatePreferences, settings.notificationCategoryPreferences],
   );
@@ -91,13 +88,6 @@ export function NotificationCategoriesSection({
             <View
               key={definition.id}
               style={[styles.categoryRow, index < orderedDefinitions.length - 1 && styles.rowBorder]}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setActiveCategoryId(definition.id)}
-                style={({ pressed }) => [styles.rowTextPressable, pressed && styles.rowPressed]}>
-                <Text style={styles.rowTitle}>{definition.title}</Text>
-                <Text style={styles.rowDescription}>{definition.description}</Text>
-              </Pressable>
               <Switch
                 value={enabled}
                 onValueChange={(value) =>
@@ -113,6 +103,13 @@ export function NotificationCategoriesSection({
                 trackColor={theme.surfaces.switchTrack}
                 thumbColor={theme.surfaces.switchThumb(enabled)}
               />
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setActiveCategoryId(definition.id)}
+                style={({ pressed }) => [styles.rowTextPressable, pressed && styles.rowPressed]}>
+                <Text style={styles.rowTitle}>{definition.title}</Text>
+                <Text style={styles.rowDescription}>{definition.description}</Text>
+              </Pressable>
             </View>
           );
         })}

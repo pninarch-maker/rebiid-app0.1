@@ -2,7 +2,8 @@ import { StyleSheet } from 'react-native';
 
 import {
   buttonText,
-  hebrewStartFlexDirection,
+  physicalHebrewRow,
+  physicalLtrRow,
   Layout,
   rtlCardText,
   rtlContentBlock,
@@ -67,7 +68,7 @@ export function createHebrewDatePickerStyles(theme: AppTheme, surfaces: ThemedSu
       ...rtlHeadingText,
     },
     navRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalHebrewRow,
       justifyContent: 'space-between',
       gap: 12,
       marginBottom: 12,
@@ -80,7 +81,7 @@ export function createHebrewDatePickerStyles(theme: AppTheme, surfaces: ThemedSu
       borderColor: colors.cardBorder,
       paddingVertical: 12,
       paddingHorizontal: 12,
-      alignItems: 'flex-start',
+      alignItems: 'stretch',
       justifyContent: 'center',
       minHeight: Layout.minTouchTarget,
     },
@@ -101,9 +102,8 @@ export function createHebrewDatePickerStyles(theme: AppTheme, surfaces: ThemedSu
       ...rtlContentBlock,
     },
     weekdayRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalLtrRow,
       marginBottom: 8,
-      width: '100%',
     },
     weekdayCell: {
       flex: 1,
@@ -121,9 +121,8 @@ export function createHebrewDatePickerStyles(theme: AppTheme, surfaces: ThemedSu
       writingDirection: 'rtl',
     },
     weekRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalLtrRow,
       marginBottom: 4,
-      width: '100%',
     },
     dayCell: {
       flex: 1,
@@ -163,7 +162,7 @@ export function createHebrewDatePickerStyles(theme: AppTheme, surfaces: ThemedSu
       color: colors.primary,
     },
     actionsRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalHebrewRow,
       gap: 12,
       ...rtlContentBlock,
     },

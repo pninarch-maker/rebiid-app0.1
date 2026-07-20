@@ -3,7 +3,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 
 import { formatHebrewMonthTitle } from '@/src/engine/calendar/formatters';
-import { CALENDAR_ENGINE_WEEKDAY_HEADERS } from '@/lib/calendarWeekLayout';
+import {
+  getVisualWeekdayHeadersLeftToRight,
+  mapEngineWeekToVisualOrder,
+} from '@/lib/calendarWeekLayout';
 import {
   formatHebrewCustomDate,
   formatHebrewDayNumeral,
@@ -162,7 +165,7 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
 
             <View style={styles.calendarCard}>
               <View style={styles.weekdayRow}>
-                {CALENDAR_ENGINE_WEEKDAY_HEADERS.map((label) => (
+                {getVisualWeekdayHeadersLeftToRight().map((label) => (
                   <View key={label} style={styles.weekdayCell}>
                     <Text style={styles.weekdayLabel}>{label}</Text>
                   </View>
@@ -171,7 +174,7 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
 
               {monthMeta.weeks.map((week, weekIndex) => (
                 <View key={`week-${weekIndex}`} style={styles.weekRow}>
-                  {week.map((cell) => {
+                  {mapEngineWeekToVisualOrder(week).map((cell) => {
                     if (cell.day === null || !cell.monthName) {
                       return <View key={cell.key} style={[styles.dayCell, styles.dayCellEmpty]} />;
                     }

@@ -3,7 +3,8 @@ import { StyleSheet } from 'react-native';
 import { createElevation } from '@/constants/tokens';
 import {
   buttonText,
-  hebrewStartFlexDirection,
+  physicalHebrewRow,
+  physicalLtrRow,
   Layout,
   rtlCardText,
   rtlContentBlock,
@@ -43,7 +44,7 @@ export function createCalendarStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       ...rtlHeadingText,
     },
     navRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalHebrewRow,
       justifyContent: 'space-between',
       gap: 12,
       marginBottom: 16,
@@ -56,7 +57,7 @@ export function createCalendarStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       borderColor: colors.cardBorder,
       paddingVertical: 12,
       paddingHorizontal: 12,
-      alignItems: 'flex-start',
+      alignItems: 'stretch',
       justifyContent: 'center',
       minHeight: Layout.minTouchTarget,
     },
@@ -79,10 +80,9 @@ export function createCalendarStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       ...createElevation(colors.shadow),
     },
     weekdayRow: {
-      // Engine-order [א…ש] + hebrew-start flex → א׳ far right, ש׳ far left.
-      flexDirection: hebrewStartFlexDirection(),
+      // Visual left-to-right: ש׳ … א׳ via mapEngineWeekToVisualOrder + physicalLtrRow.
+      ...physicalLtrRow,
       marginBottom: 8,
-      width: '100%',
     },
     weekdayCell: {
       flex: 1,
@@ -99,9 +99,8 @@ export function createCalendarStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       writingDirection: 'rtl',
     },
     weekRow: {
-      flexDirection: hebrewStartFlexDirection(),
+      ...physicalLtrRow,
       marginBottom: 4,
-      width: '100%',
     },
     dayCell: {
       flex: 1,
@@ -146,7 +145,8 @@ export function createCalendarStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       color: colors.primary,
     },
     markerRow: {
-      flexDirection: 'row-reverse',
+      ...physicalLtrRow,
+      justifyContent: 'flex-end',
       gap: 3,
       marginTop: 4,
       minHeight: 6,
