@@ -1,4 +1,4 @@
-import { HDate } from '@hebcal/core';
+import { gematriya, HDate } from '@hebcal/core';
 import { useCallback, useMemo, useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
 
@@ -20,17 +20,22 @@ import { useThemeStyles } from '@/src/theme/useTheme';
 export interface HebrewDateValue {
   hebrewMonth: string;
   hebrewDay: number;
+  /** Full Hebrew year when known (personal reminders). Optional for legacy month+day pickers. */
+  hebrewYear?: number;
 }
 
 interface HebrewDatePickerProps {
   value: HebrewDateValue;
   onChange: (next: HebrewDateValue) => void;
+  /** When true, display includes the Hebrew year and selection stores it. */
+  includeYear?: boolean;
 }
 
 interface PickerDayCell {
   key: string;
   day: number | null;
   gregorian: Date | null;
+  hebrewYear: number | null;
   isToday: boolean;
   monthName: string | null;
 }
@@ -62,6 +67,7 @@ function buildPickerWeeks(anchorDate: Date): PickerDayCell[][] {
       key: `empty-start-${index}`,
       day: null,
       gregorian: null,
+      hebrewYear: null,
       isToday: false,
       monthName: null,
     });
@@ -74,6 +80,7 @@ function buildPickerWeeks(anchorDate: Date): PickerDayCell[][] {
       key: gregorian.toISOString(),
       day,
       gregorian,
+      hebrewYear: year,
       isToday: gregorian.getTime() === today,
       monthName: toStoredHebrewMonthName(String(hdate.getMonthName())),
     });
@@ -90,6 +97,7 @@ function buildPickerWeeks(anchorDate: Date): PickerDayCell[][] {
         key: `empty-end-${currentWeek.length}`,
         day: null,
         gregorian: null,
+        hebrewYear: null,
         isToday: false,
         monthName: null,
       });
@@ -100,7 +108,11 @@ function buildPickerWeeks(anchorDate: Date): PickerDayCell[][] {
   return weeks;
 }
 
-export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
+export function HebrewDatePicker({
+  value,
+  onChange,
+  includeYear = false,
+}: HebrewDatePickerProps) {
   const styles = useThemeStyles(createHebrewDatePickerStyles);
   const [visible, setVisible] = useState(false);
   const [monthAnchor, setMonthAnchor] = useState(() => new Date());
@@ -114,7 +126,10 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
     };
   }, [monthAnchor]);
 
-  const displayValue = formatHebrewCustomDate(value.hebrewDay, value.hebrewMonth);
+  const displayValue =
+    includeYear && value.hebrewYear
+      ? `${formatHebrewCustomDate(value.hebrewDay, value.hebrewMonth)} ${gematriya(value.hebrewYear)}`
+      : formatHebrewCustomDate(value.hebrewDay, value.hebrewMonth);
 
   const openPicker = useCallback(() => {
     setDraft(value);
@@ -186,7 +201,10 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
                       draft.hebrewDay === cell.day &&
                       (toStoredHebrewMonthName(draft.hebrewMonth) === cell.monthName ||
                         (toStoredHebrewMonthName(draft.hebrewMonth) === 'Adar' &&
-                          (cell.monthName === 'Adar' || cell.monthName === 'Adar II')));
+                          (cell.monthName === 'Adar' || cell.monthName === 'Adar II'))) &&
+                      (!includeYear ||
+                        draft.hebrewYear == null ||
+                        draft.hebrewYear === cell.hebrewYear);
                     const numeral = formatHebrewDayNumeral(cell.day);
                     const accessibilityLabel = formatHebrewCustomDate(cell.day, cell.monthName);
 
@@ -205,6 +223,9 @@ export function HebrewDatePicker({ value, onChange }: HebrewDatePickerProps) {
                           setDraft({
                             hebrewMonth: cell.monthName!,
                             hebrewDay: cell.day!,
+                            ...(includeYear && cell.hebrewYear
+                              ? { hebrewYear: cell.hebrewYear }
+                              : {}),
                           })
                         }>
                         <RtlCenteredText

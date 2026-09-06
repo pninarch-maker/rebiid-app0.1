@@ -18,13 +18,14 @@ import { LtrValueText, RtlText } from '@/src/components/rtl';
 
 import { useScreenLayout } from '@/hooks/useScreenLayout';
 import { useAppearancePreference } from '@/hooks/useAppearancePreference';
-import { APP_META } from '@/lib/appInfo';
+import { APP_META, getAppVersion } from '@/lib/appInfo';
 import { getCityByKey } from '@/lib/cities';
 import { openEmailAddress } from '@/lib/contactLinks';
 import { rescheduleNotificationsAfterSettingsChange, enableNotifications, disableNotifications, scheduleTestNotification } from '@/lib/notifications';
 import { NOTIFICATION_MODE_OPTIONS, type NotificationMode } from '@/lib/notificationMode';
 import { openAndroidNotificationChannelSettings } from '@/lib/openNotificationChannelSettings';
 import {
+  AboutScreenCopy,
   ButtonCopy,
   EmptyCopy,
   ErrorCopy,
@@ -33,6 +34,7 @@ import {
   REBIID,
   AccessibilityCopy,
 } from '@/lib/rebiidCopy';
+import { RtlLabelValueRow } from '@/src/components/RtlLabelValueRow';
 import {
   createCustomReminderId,
   getAppSettings,
@@ -56,11 +58,20 @@ import { NotificationCategoriesSection } from '@/src/components/NotificationCate
 import { CityPickerField } from '@/src/components/CityPickerField';
 import { HebrewDatePicker } from '@/src/components/HebrewDatePicker';
 import {
+  createEmptyPersonalReminderForm,
+  draftInputFromForm,
+  PersonalReminderForm,
+  personalFormFromReminder,
+  type PersonalReminderFormValue,
+} from '@/src/components/PersonalReminderForm';
+import {
   createSettingsStyles,
   type SettingsScreenStyles,
 } from '@/src/theme/settingsScreenStyles';
 import { useTheme, useThemeStyles } from '@/src/theme/useTheme';
 import { formatHebrewCustomDateWithTime } from '@/lib/hebrewMonths';
+import { buildCustomReminderFromDraft } from '@/lib/personalReminderScheduling';
+import { PERSONAL_REMINDER_KIND_OPTIONS } from '@/lib/personalReminderTypes';
 
 type OffsetPresetKey = 'default' | 'at_time' | '10' | '30' | '60' | '1440' | 'custom';
 
@@ -164,7 +175,7 @@ function OffsetPicker({
   );
 }
 
-const EMPTY_FORM: Omit<CustomReminder, 'id'> = {
+const EMPTY_MINHAG_FORM: Omit<CustomReminder, 'id'> = {
   title: '',
   message: '',
   hebrewMonth: 'Nisan',
@@ -172,11 +183,11 @@ const EMPTY_FORM: Omit<CustomReminder, 'id'> = {
   time: '09:00',
   enabled: true,
   reminderOffsetMinutes: USE_DEFAULT_REMINDER_OFFSET,
-  category: 'personal',
+  category: 'minhag_segulah',
 };
 
 function emptyFormForCategory(category: CustomReminderCategory): Omit<CustomReminder, 'id'> {
-  return { ...EMPTY_FORM, category };
+  return { ...EMPTY_MINHAG_FORM, category };
 }
 
 export default function SettingsScreen() {
@@ -190,11 +201,15 @@ export default function SettingsScreen() {
   const [customCandleMinutes, setCustomCandleMinutes] = useState('40');
   const [customReminderOffset, setCustomReminderOffset] = useState('30');
   const [showReminderForm, setShowReminderForm] = useState(false);
-  const [reminderForm, setReminderForm] = useState(EMPTY_FORM);
+  const [personalForm, setPersonalForm] = useState<PersonalReminderFormValue>(() =>
+    createEmptyPersonalReminderForm(),
+  );
+  const [editingPersonalId, setEditingPersonalId] = useState<string | null>(null);
   const [showMinhagForm, setShowMinhagForm] = useState(false);
   const [minhagForm, setMinhagForm] = useState(() => emptyFormForCategory('minhag_segulah'));
   const [minhagCustomOffset, setMinhagCustomOffset] = useState('30');
   const [testingNotification, setTestingNotification] = useState(false);
+  const [savingPersonal, setSavingPersonal] = useState(false);
 
   const candlePreset = useMemo(() => {
     if (!settings) return 'custom';
@@ -417,7 +432,7 @@ export default function SettingsScreen() {
 
       await persistSettings(nextSettings);
 
-      if (mode === 'device_sound' && Platform.OS === 'android') {
+      if (Platform.OS === 'android') {
         await openAndroidNotificationChannelSettings(mode);
       }
     },
@@ -427,9 +442,13 @@ export default function SettingsScreen() {
   const handleTestNotification = useCallback(async () => {
     setTestingNotification(true);
     try {
-      const success = await scheduleTestNotification();
-      if (success) {
-        Alert.alert('REBIID', SuccessCopy.testNotification);
+      const result = await scheduleTestNotification();
+      if (result.success) {
+        if (result.diagnosticsText) {
+          Alert.alert('REBIID — אבחון ערוצים', result.diagnosticsText);
+        } else {
+          Alert.alert('REBIID', SuccessCopy.testNotification);
+        }
         return;
       }
       Alert.alert('רגע', EmptyCopy.notificationsPermission);
@@ -441,20 +460,36 @@ export default function SettingsScreen() {
   }, []);
 
   const handleSaveCustomReminder = useCallback(async () => {
-    if (!settings || !reminderForm.title.trim()) {
-      Alert.alert('רגע', ErrorCopy.missingTitle);
+    if (!settings || savingPersonal) {
       return;
     }
 
-    const reminder: CustomReminder = {
-      id: createCustomReminderId(),
-      ...reminderForm,
-      title: reminderForm.title.trim(),
-      message: reminderForm.message.trim(),
-      category: 'personal',
-    };
+    const id = editingPersonalId ?? createCustomReminderId();
+    const existing = editingPersonalId
+      ? settings.customReminders.find((item) => item.id === editingPersonalId) ?? null
+      : null;
 
-    const nextReminders = [...settings.customReminders, reminder];
+    const { reminder, errors } = buildCustomReminderFromDraft({
+      id,
+      title: personalForm.title,
+      message: personalForm.message,
+      enabled: existing?.enabled ?? true,
+      reminderOffsetMinutes: personalForm.reminderOffsetMinutes,
+      category: 'personal',
+      draft: draftInputFromForm(personalForm),
+      existing,
+    });
+
+    if (errors.length > 0) {
+      Alert.alert('רגע', errors[0]?.messageHe ?? ErrorCopy.generic);
+      return;
+    }
+
+    const nextReminders = editingPersonalId
+      ? settings.customReminders.map((item) => (item.id === editingPersonalId ? reminder : item))
+      : [...settings.customReminders, reminder];
+
+    setSavingPersonal(true);
     setSyncing(true);
     try {
       await saveCustomReminders(nextReminders);
@@ -462,14 +497,22 @@ export default function SettingsScreen() {
       setSettings(refreshed);
       await loadReminderEngineSettings();
       await rescheduleNotificationsAfterSettingsChange();
-      setReminderForm(EMPTY_FORM);
+      setPersonalForm(createEmptyPersonalReminderForm());
+      setEditingPersonalId(null);
       setShowReminderForm(false);
     } catch {
       Alert.alert('רגע', ErrorCopy.storage);
     } finally {
+      setSavingPersonal(false);
       setSyncing(false);
     }
-  }, [reminderForm, settings]);
+  }, [editingPersonalId, personalForm, savingPersonal, settings]);
+
+  const handleEditPersonalReminder = useCallback((reminder: CustomReminder) => {
+    setPersonalForm(personalFormFromReminder(reminder));
+    setEditingPersonalId(reminder.id);
+    setShowReminderForm(true);
+  }, []);
 
   const handleSaveMinhagReminder = useCallback(async () => {
     if (!settings || !minhagForm.title.trim()) {
@@ -518,21 +561,35 @@ export default function SettingsScreen() {
         return;
       }
 
-      const nextReminders = settings.customReminders.filter((item) => item.id !== id);
-      setSyncing(true);
-      try {
-        await saveCustomReminders(nextReminders);
-        const refreshed = await getAppSettings();
-        setSettings(refreshed);
-        await loadReminderEngineSettings();
-        await rescheduleNotificationsAfterSettingsChange();
-      } catch {
-        Alert.alert('רגע', ErrorCopy.storage);
-      } finally {
-        setSyncing(false);
-      }
+      Alert.alert('מחיקת תזכורת', 'למחוק את התזכורת האישית? פעולה זו אינה ניתנת לביטול.', [
+        { text: 'ביטול', style: 'cancel' },
+        {
+          text: 'מחק',
+          style: 'destructive',
+          onPress: async () => {
+            const nextReminders = settings.customReminders.filter((item) => item.id !== id);
+            setSyncing(true);
+            try {
+              await saveCustomReminders(nextReminders);
+              const refreshed = await getAppSettings();
+              setSettings(refreshed);
+              await loadReminderEngineSettings();
+              await rescheduleNotificationsAfterSettingsChange();
+              if (editingPersonalId === id) {
+                setEditingPersonalId(null);
+                setPersonalForm(createEmptyPersonalReminderForm());
+                setShowReminderForm(false);
+              }
+            } catch {
+              Alert.alert('רגע', ErrorCopy.storage);
+            } finally {
+              setSyncing(false);
+            }
+          },
+        },
+      ]);
     },
-    [settings],
+    [editingPersonalId, settings],
   );
 
   const handleToggleCustomReminder = useCallback(
@@ -885,106 +942,95 @@ export default function SettingsScreen() {
           {personalReminders.length === 0 ? (
             <RtlText style={styles.emptyText}>{EmptyCopy.personalReminders}</RtlText>
           ) : (
-            personalReminders.map((reminder, index) => (
-              <View
-                key={reminder.id}
-                style={[
-                  styles.reminderItem,
-                  index < personalReminders.length - 1 && styles.optionRowBorder,
-                ]}>
-                <View style={styles.row}>
-                  <View style={styles.rowText}>
-                    <RtlText style={styles.rowTitle}>{reminder.title}</RtlText>
-                    <RtlText style={styles.rowDescription}>
-                      {formatHebrewCustomDateWithTime(
-                        reminder.hebrewDay,
-                        reminder.hebrewMonth,
-                        reminder.time,
-                      )}
-                    </RtlText>
+            personalReminders.map((reminder, index) => {
+              const kindLabel =
+                PERSONAL_REMINDER_KIND_OPTIONS.find((item) => item.key === reminder.kind)?.label ??
+                'אישי';
+              return (
+                <View
+                  key={reminder.id}
+                  style={[
+                    styles.reminderItem,
+                    index < personalReminders.length - 1 && styles.optionRowBorder,
+                  ]}>
+                  <View style={styles.row}>
+                    <View style={styles.rowText}>
+                      <RtlText style={styles.rowTitle}>{reminder.title}</RtlText>
+                      <RtlText style={styles.rowDescription}>
+                        {kindLabel}
+                        {' · '}
+                        {formatHebrewCustomDateWithTime(
+                          reminder.hebrewDay,
+                          reminder.hebrewMonth,
+                          reminder.reminderTimeLocal ?? reminder.time,
+                        )}
+                        {reminder.recurrence === 'once' ? ' · חד־פעמי' : ' · שנתי עברי'}
+                      </RtlText>
+                    </View>
+                    <Switch
+                      value={reminder.enabled}
+                      onValueChange={(value) => handleToggleCustomReminder(reminder.id, value)}
+                      trackColor={theme.surfaces.switchTrack}
+                      thumbColor={theme.surfaces.switchThumb(reminder.enabled)}
+                    />
                   </View>
-                  <Switch
-                    value={reminder.enabled}
-                    onValueChange={(value) => handleToggleCustomReminder(reminder.id, value)}
-                    trackColor={theme.surfaces.switchTrack}
-                    thumbColor={theme.surfaces.switchThumb(reminder.enabled)}
-                  />
+                  {reminder.message ? (
+                    <RtlText style={styles.rowDescription}>{reminder.message}</RtlText>
+                  ) : null}
+                  <Pressable onPress={() => handleEditPersonalReminder(reminder)}>
+                    <RtlText style={styles.rowDescription}>עריכה</RtlText>
+                  </Pressable>
+                  <Pressable onPress={() => handleDeleteCustomReminder(reminder.id)}>
+                    <RtlText style={styles.deleteText}>מחק תזכורת</RtlText>
+                  </Pressable>
                 </View>
-                <RtlText style={styles.rowDescription}>{reminder.message}</RtlText>
-                <Pressable onPress={() => handleDeleteCustomReminder(reminder.id)}>
-                  <RtlText style={styles.deleteText}>מחק תזכורת</RtlText>
-                </Pressable>
-              </View>
-            ))
+              );
+            })
           )}
 
           <Pressable
             style={styles.addButton}
-            onPress={() => setShowReminderForm((current) => !current)}>
+            onPress={() => {
+              if (showReminderForm) {
+                setShowReminderForm(false);
+                setEditingPersonalId(null);
+                setPersonalForm(createEmptyPersonalReminderForm());
+              } else {
+                setEditingPersonalId(null);
+                setPersonalForm(createEmptyPersonalReminderForm());
+                setShowReminderForm(true);
+              }
+            }}>
             <RtlText style={styles.addButtonText}>
               {showReminderForm ? ButtonCopy.closeForm : ButtonCopy.addPersonalReminder}
             </RtlText>
           </Pressable>
 
           {showReminderForm ? (
-            <View style={styles.formBlock}>
-              <RtlText style={styles.inputLabel}>כותרת</RtlText>
-              <TextInput
-                style={styles.input}
-                value={reminderForm.title}
-                onChangeText={(text) => setReminderForm((current) => ({ ...current, title: text }))}
-                textAlign="right"
-              />
-              <RtlText style={styles.inputLabel}>הודעה</RtlText>
-              <TextInput
-                style={[styles.input, styles.multilineInput]}
-                value={reminderForm.message}
-                onChangeText={(text) =>
-                  setReminderForm((current) => ({ ...current, message: text }))
-                }
-                multiline
-                textAlign="right"
-              />
-              <HebrewDatePicker
-                value={{
-                  hebrewMonth: reminderForm.hebrewMonth,
-                  hebrewDay: reminderForm.hebrewDay,
-                }}
-                onChange={(next) =>
-                  setReminderForm((current) => ({
-                    ...current,
-                    hebrewMonth: next.hebrewMonth,
-                    hebrewDay: next.hebrewDay,
-                  }))
-                }
-              />
-              <RtlText style={styles.inputLabel}>שעה (HH:MM)</RtlText>
-              <TextInput
-                style={styles.input}
-                value={reminderForm.time}
-                onChangeText={(text) => setReminderForm((current) => ({ ...current, time: text }))}
-                placeholder="09:00"
-                textAlign="right"
-              />
-              <RtlText style={styles.inputLabel}>מתי להזכיר?</RtlText>
-              <OffsetPicker
-                allowDefault
-                styles={styles}
-                value={reminderForm.reminderOffsetMinutes}
-                customValue={customReminderOffset}
-                customLabel="כמה דקות לפני התזכורת?"
-                onChange={(minutes, customText) => {
-                  setCustomReminderOffset(customText);
-                  setReminderForm((current) => ({
-                    ...current,
-                    reminderOffsetMinutes: minutes,
-                  }));
-                }}
-              />
-              <Pressable style={styles.saveButton} onPress={handleSaveCustomReminder}>
-                <RtlText style={styles.saveButtonText}>{ButtonCopy.save}</RtlText>
-              </Pressable>
-            </View>
+            <PersonalReminderForm
+              styles={styles}
+              value={personalForm}
+              onChange={setPersonalForm}
+              onSave={() => void handleSaveCustomReminder()}
+              saving={savingPersonal}
+              editId={editingPersonalId}
+              offsetPicker={
+                <OffsetPicker
+                  allowDefault
+                  styles={styles}
+                  value={personalForm.reminderOffsetMinutes}
+                  customValue={customReminderOffset}
+                  customLabel="כמה דקות לפני התזכורת?"
+                  onChange={(minutes, customText) => {
+                    setCustomReminderOffset(customText);
+                    setPersonalForm((current) => ({
+                      ...current,
+                      reminderOffsetMinutes: minutes,
+                    }));
+                  }}
+                />
+              }
+            />
           ) : null}
         </View>
 
@@ -1049,21 +1095,56 @@ export default function SettingsScreen() {
 
         <RtlText style={styles.sectionTitle}>{SettingsCopy.aboutLinkTitle}</RtlText>
         <RtlText style={styles.sectionHelper}>{SettingsCopy.aboutLinkHelper}</RtlText>
-        <Pressable style={styles.card} onPress={() => router.push('/about')}>
-          <View style={styles.aboutLinkRow}>
+        <View style={styles.aboutCard}>
+          <View style={styles.aboutLogoWrap}>
             <Image
               source={require('@/assets/images/rebiid-logo.webp')}
-              style={styles.aboutLinkLogo}
+              style={styles.aboutLogo}
               contentFit="contain"
               accessibilityLabel={REBIID.name}
             />
-            <View style={styles.aboutLinkText}>
-              <RtlText style={styles.aboutLinkLabel}>{REBIID.name}</RtlText>
-              <RtlText style={styles.aboutLinkSubtitle}>{REBIID.tagline}</RtlText>
-            </View>
-            <RtlText style={styles.aboutLinkChevron}>‹</RtlText>
           </View>
-        </Pressable>
+
+          <RtlLabelValueRow
+            style={styles.aboutMetaRow}
+            bordered
+            label={AboutScreenCopy.versionLabel}
+            value={getAppVersion()}
+            valueDirection="ltr"
+          />
+          <RtlLabelValueRow
+            style={styles.aboutMetaRow}
+            bordered
+            label={AboutScreenCopy.developerLabel}
+            value={APP_META.developer}
+          />
+
+          {(
+            [
+              { key: 'terms', label: AboutScreenCopy.termsTitle },
+              { key: 'privacy', label: AboutScreenCopy.privacyTitle },
+              { key: 'disclaimer', label: AboutScreenCopy.disclaimerTitle },
+            ] as const
+          ).map((item) => (
+            <Pressable
+              key={item.key}
+              accessibilityRole="link"
+              accessibilityLabel={item.label}
+              onPress={() => router.push('/about')}
+              style={({ pressed }) => [
+                styles.aboutNavRow,
+                pressed && styles.aboutNavRowPressed,
+              ]}>
+              {/* Child order in physicalLtrRow: first = physical left (chevron), last = physical right (label). */}
+              <Text style={styles.aboutNavChevron}>‹</Text>
+              <View style={styles.aboutNavLabelWrap}>
+                <RtlText inRow style={styles.aboutNavLabel}>
+                  {item.label}
+                </RtlText>
+              </View>
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -13,6 +13,7 @@ import {
 import { getDefaultReminderEngineSettings } from '@/src/engine/reminders/defaultSettings';
 
 import { setCurrentAppSettings, currentAppSettings } from './appState';
+import { invalidateDayCalendarContextCache } from '@/src/engine/reminders/dayContext';
 import { normalizeAppearancePreference } from './appearancePreference';
 import { NOTIFICATION_CATEGORY_DEFINITIONS } from './notificationCategories';
 import { normalizeNotificationCategoryPreferences } from './notificationCategoryPrefs';
@@ -20,6 +21,7 @@ import {
   legacyFieldsForNotificationMode,
   migrateNotificationMode,
 } from './notificationMode';
+import { migrateLegacyCustomReminder } from './personalReminderScheduling';
 import type {
   AppSettings,
   NotificationCategoryPreferences,
@@ -44,17 +46,30 @@ export let currentReminderSettings: ReminderEngineSettings = getDefaultReminderE
 
 export { currentAppSettings };
 
+let cachedAppSettings: AppSettings | null = null;
+
+export function invalidateAppSettingsCache(): void {
+  cachedAppSettings = null;
+}
+
 export async function getAppSettings(): Promise<AppSettings> {
+  if (cachedAppSettings) {
+    return cachedAppSettings;
+  }
+
   const stored = await AsyncStorage.getItem(SETTINGS_KEY);
   if (stored) {
     try {
-      return normalizeAppSettings(JSON.parse(stored) as Partial<AppSettings>);
+      cachedAppSettings = normalizeAppSettings(JSON.parse(stored) as Partial<AppSettings>);
+      return cachedAppSettings;
     } catch {
-      return { ...DEFAULT_APP_SETTINGS };
+      cachedAppSettings = { ...DEFAULT_APP_SETTINGS };
+      return cachedAppSettings;
     }
   }
 
-  return migrateLegacySettings();
+  cachedAppSettings = await migrateLegacySettings();
+  return cachedAppSettings;
 }
 
 export async function saveAppSettings(settings: AppSettings): Promise<void> {
@@ -65,6 +80,8 @@ export async function saveAppSettings(settings: AppSettings): Promise<void> {
     throw new Error('storage');
   }
   setCurrentAppSettings(normalized);
+  cachedAppSettings = normalized;
+  invalidateDayCalendarContextCache();
   syncReminderEngineFromAppSettings(normalized);
   await syncEngineCategoriesFromNotificationPreferences(normalized.notificationCategoryPreferences);
   await persistReminderEngineSettings(currentReminderSettings);
@@ -133,7 +150,7 @@ function normalizeZmanimProfile(value: unknown): ZmanimCalculationProfile {
 }
 
 function normalizeCustomReminder(reminder: CustomReminder): CustomReminder {
-  return {
+  const base: CustomReminder = {
     id: reminder.id,
     title: reminder.title.trim(),
     message: reminder.message.trim(),
@@ -146,7 +163,25 @@ function normalizeCustomReminder(reminder: CustomReminder): CustomReminder {
         ? reminder.reminderOffsetMinutes
         : USE_DEFAULT_REMINDER_OFFSET,
     category: reminder.category === 'minhag_segulah' ? 'minhag_segulah' : 'personal',
+    schemaVersion: reminder.schemaVersion,
+    kind: reminder.kind,
+    inputCalendar: reminder.inputCalendar,
+    originalGregorianDate: reminder.originalGregorianDate,
+    originalHebrewDate: reminder.originalHebrewDate,
+    occurredAfterSunset: reminder.occurredAfterSunset,
+    effectiveHebrewAnchor: reminder.effectiveHebrewAnchor,
+    recurrence: reminder.recurrence,
+    reminderTimeLocal: reminder.reminderTimeLocal ?? reminder.time ?? '09:00',
+    yahrzeitPolicy: reminder.yahrzeitPolicy,
+    calendarRuleVersion: reminder.calendarRuleVersion,
+    scheduledOccurrences: Array.isArray(reminder.scheduledOccurrences)
+      ? reminder.scheduledOccurrences
+      : [],
+    createdAt: reminder.createdAt,
+    updatedAt: reminder.updatedAt,
   };
+
+  return migrateLegacyCustomReminder(base);
 }
 
 async function migrateLegacySettings(): Promise<AppSettings> {
@@ -272,8 +307,6 @@ export async function loadReminderEngineSettings(): Promise<ReminderEngineSettin
     havdalahMethod: currentAppSettings.havdalahMethod,
     israel: true,
   };
-
-  await persistReminderEngineSettings(currentReminderSettings);
 
   return currentReminderSettings;
 }

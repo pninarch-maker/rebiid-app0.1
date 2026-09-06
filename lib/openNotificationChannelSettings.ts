@@ -9,8 +9,6 @@ function channelIdForMode(mode: NotificationMode): string {
   switch (mode) {
     case 'device_sound':
       return NOTIFICATION_CHANNEL_IDS.deviceSound;
-    case 'rebiid_sound':
-      return NOTIFICATION_CHANNEL_IDS.rebiidSound;
     case 'vibration_only':
       return NOTIFICATION_CHANNEL_IDS.vibrationOnly;
     case 'silent':

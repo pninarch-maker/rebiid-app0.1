@@ -56,6 +56,12 @@ export function calculateHalachicZmanim(
   assignZman(result, 'plagHaMincha', zmanim.plagHaMincha(), location);
   assignZman(result, 'sunset', zmanim.sunset(), location);
 
+  // tzeit (צאת הכוכבים) is always the canonical halachic value — never aliased to havdalah.
+  assignZman(result, 'tzeit', zmanim.tzeit(), location);
+  if (result.tzeit) {
+    result.nightfall = result.tzeit;
+  }
+
   if (timedEvents.candleLighting) {
     result.candleLighting = timedEvents.candleLighting;
   }
@@ -63,7 +69,6 @@ export function calculateHalachicZmanim(
   if (timedEvents.havdalah) {
     result.havdalah = timedEvents.havdalah;
     result.nightfall = timedEvents.havdalah;
-    result.tzeit = timedEvents.havdalah;
     if (weekday === 6) {
       result.motzeiShabbat = timedEvents.havdalah;
     }
@@ -71,16 +76,9 @@ export function calculateHalachicZmanim(
     assignZman(result, 'motzeiShabbat', zmanim.sunsetOffset(72, false), location);
     if (result.motzeiShabbat) {
       result.nightfall = result.motzeiShabbat;
-      result.tzeit = result.motzeiShabbat;
     }
-  } else {
-    assignZman(result, 'tzeit', zmanim.tzeit(), location);
-    if (result.tzeit) {
-      result.nightfall = result.tzeit;
-      if (weekday === 6) {
-        result.motzeiShabbat = result.tzeit;
-      }
-    }
+  } else if (weekday === 6 && result.tzeit) {
+    result.motzeiShabbat = result.tzeit;
   }
 
   return result;

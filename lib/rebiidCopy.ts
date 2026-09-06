@@ -205,7 +205,8 @@ export const SettingsCopy = {
   notificationsToggle: 'הפעלת תזכורות',
   soundTitle: 'צליל ורטט',
   soundHelper: 'בחר איך נוח לך לקבל תזכורות — צליל, רטט או שקט.',
-  notificationModeHelper: 'הגדרה כללית לכל התזכורות. שינוי כאן יחול על כל הקטגוריות.',
+  notificationModeHelper:
+    'הגדרה כללית לכל התזכורות. צליל, רטט והשתקה מוגדרים בערוצי ההתראות של Android.',
   soundEnabled: 'צליל תזכורת',
   vibrationEnabled: 'רטט',
   soundPick: 'בחירת צליל',
@@ -218,7 +219,8 @@ export const SettingsCopy = {
   minhagSegulahCustomTitle: 'תזכורות מותאמות',
   addMinhagReminder: 'להוסיף תזכורת מנהג',
   personalTitle: 'תזכורות משלי',
-  personalHelper: 'ימי הולדת, יארצייטים וכל דבר שחשוב לך לזכור.',
+  personalHelper:
+    'ימי הולדת, יארצייטים ואירועים אישיים — לפי תאריך עברי או לועזי. חזרה שנתית תמיד לפי התאריך העברי.',
   accessibilityTitle: AccessibilityCopy.title,
   accessibilityText: AccessibilityCopy.text,
   accessibilityEmailLabel: AccessibilityCopy.developerEmailLabel,

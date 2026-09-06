@@ -8,11 +8,13 @@ import {
   RoshChodeshEvent,
 } from '@hebcal/core';
 
+import { currentAppSettings } from '@/lib/appState';
+
 import { getCalendarDay } from '../calendar/getCalendarDay';
 import { DEFAULT_ENGINE_CONFIG, type JewishDayZmanim } from '../types';
 import { getZmanim } from '../zmanim';
 import { toGregorianDateOnly } from '../zmanim/formatTime';
-import { addDays } from './helpers';
+import { addDays, toDateKey } from './helpers';
 
 export interface DayEventInfo {
   desc: string;
@@ -39,6 +41,28 @@ export interface DayCalendarContext {
   events: DayEventInfo[];
   tomorrowEvents: DayEventInfo[];
   israel: boolean;
+}
+
+const contextCache = new Map<string, DayCalendarContext>();
+const MAX_CONTEXT_CACHE = 64;
+
+function buildContextCacheKey(date: Date, israel: boolean): string {
+  const s = currentAppSettings;
+  return [
+    toDateKey(date),
+    israel ? '1' : '0',
+    s.city,
+    s.latitude,
+    s.longitude,
+    s.timezone,
+    s.candleLightingOffsetMinutes,
+    s.havdalahMethod,
+    s.zmanimProfile ?? 'gra',
+  ].join('|');
+}
+
+export function invalidateDayCalendarContextCache(): void {
+  contextCache.clear();
 }
 
 function mapEvent(event: unknown): DayEventInfo | null {
@@ -91,12 +115,18 @@ function getEventsForHDate(hdate: HDate, israel: boolean): DayEventInfo[] {
 
 export function buildDayCalendarContext(date: Date, israel: boolean): DayCalendarContext {
   const day = toGregorianDateOnly(date);
+  const cacheKey = buildContextCacheKey(day, israel);
+  const cached = contextCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const calendar = getCalendarDay(DEFAULT_ENGINE_CONFIG, day);
   const hdate = new HDate(day);
   const tomorrow = addDays(day, 1);
   const tomorrowHdate = new HDate(tomorrow);
 
-  return {
+  const ctx: DayCalendarContext = {
     date: day,
     hdate,
     tomorrow: tomorrowHdate,
@@ -111,6 +141,15 @@ export function buildDayCalendarContext(date: Date, israel: boolean): DayCalenda
     tomorrowEvents: getEventsForHDate(tomorrowHdate, israel),
     israel,
   };
+
+  if (contextCache.size >= MAX_CONTEXT_CACHE) {
+    const firstKey = contextCache.keys().next().value;
+    if (firstKey) {
+      contextCache.delete(firstKey);
+    }
+  }
+  contextCache.set(cacheKey, ctx);
+  return ctx;
 }
 
 export function daysUntilHebrewDate(from: HDate, monthName: string, day: number): number {
@@ -126,20 +165,25 @@ export function daysUntilHebrewDate(from: HDate, monthName: string, day: number)
 
 /**
  * Keywords that must equal event `desc` exactly.
- * Substring matching incorrectly matched "Yom Kippur Katan Av" / "Purim Katan".
- * Basename-only matching is unsafe: hebcal sets basename "Yom Kippur" on
- * "Erev Yom Kippur" (and similarly for Purim), which would fire day-of rules on erev.
+ * Substring/basename matching incorrectly fires eve rules on fast day and vice versa.
  */
 const EXACT_HOLIDAY_DESC_KEYWORDS = new Set([
   'Yom Kippur',
   'Erev Yom Kippur',
   'Purim',
   'Erev Purim',
+  "Tish'a B'Av",
+  "Erev Tish'a B'Av",
+  'Tzom Tammuz',
+  'Tzom Gedaliah',
+  'Tzom Gedalyah',
+  "Asara B'Tevet",
+  "Ta'anit Esther",
 ]);
 
 function eventMatchesHolidayKeyword(event: DayEventInfo, keyword: string): boolean {
   if (EXACT_HOLIDAY_DESC_KEYWORDS.has(keyword)) {
-    return event.desc === keyword;
+    return event.desc === keyword || event.desc === `${keyword} (observed)`;
   }
 
   const lowerKeyword = keyword.toLowerCase();
@@ -175,4 +219,9 @@ export function isOmerDay(events: DayEventInfo[]): boolean {
 
 export function isChanukahDay(events: DayEventInfo[]): boolean {
   return events.some((event) => event.isChanukah);
+}
+
+/** True when 9 Av falls on Shabbat — the public fast is observed on 10 Av. */
+export function isTishaBavPostponedFromShabbat(ctx: DayCalendarContext): boolean {
+  return ctx.isSaturday && ctx.hdate.getMonthName() === 'Av' && ctx.hdate.getDate() === 9;
 }

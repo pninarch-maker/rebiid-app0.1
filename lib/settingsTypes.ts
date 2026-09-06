@@ -8,9 +8,27 @@ import type {
 } from './notificationCategories';
 import { createDefaultNotificationCategoryPreferences } from './notificationCategoryPrefs';
 import type { NotificationMode } from './notificationMode';
+import type {
+  GregorianDateAnchor,
+  HebrewDateAnchor,
+  PersonalReminderKind,
+  PersonalReminderOccurrence,
+  ReminderInputCalendar,
+  ReminderRecurrence,
+  YahrzeitObservancePolicy,
+} from './personalReminderTypes';
 
 export type { AdvanceReminderMinutes, NotificationCategoryId, NotificationCategoryPreference, NotificationDeliveryMode, NotificationMode };
 export type { ZmanimCalculationProfile };
+export type {
+  GregorianDateAnchor,
+  HebrewDateAnchor,
+  PersonalReminderKind,
+  PersonalReminderOccurrence,
+  ReminderInputCalendar,
+  ReminderRecurrence,
+  YahrzeitObservancePolicy,
+};
 
 export type HavdalahMethod = 'regular' | 'rabbeinu_tam';
 
@@ -25,10 +43,15 @@ export const USE_DEFAULT_REMINDER_OFFSET = -1;
 
 export type CustomReminderCategory = 'personal' | 'minhag_segulah';
 
+/**
+ * User-defined reminder. Legacy records only set the classic fields.
+ * Personal Hebrew-date reminders (schemaVersion >= 1) also carry anchors and policies.
+ */
 export interface CustomReminder {
   id: string;
   title: string;
   message: string;
+  /** Denormalized from effectiveHebrewAnchor for legacy matching / display. */
   hebrewMonth: string;
   hebrewDay: number;
   time: string;
@@ -36,6 +59,22 @@ export interface CustomReminder {
   reminderOffsetMinutes: number;
   /** Defaults to personal. Minhag/segulah reminders require the category toggle in settings. */
   category?: CustomReminderCategory;
+
+  /** Personal-reminder schema (optional for backward compatibility). */
+  schemaVersion?: number;
+  kind?: PersonalReminderKind;
+  inputCalendar?: ReminderInputCalendar;
+  originalGregorianDate?: GregorianDateAnchor;
+  originalHebrewDate?: HebrewDateAnchor;
+  occurredAfterSunset?: boolean;
+  effectiveHebrewAnchor?: HebrewDateAnchor;
+  recurrence?: ReminderRecurrence;
+  reminderTimeLocal?: string;
+  yahrzeitPolicy?: YahrzeitObservancePolicy;
+  calendarRuleVersion?: string;
+  scheduledOccurrences?: PersonalReminderOccurrence[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type NotificationCategoryPreferences = Record<
@@ -76,12 +115,12 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   defaultReminderOffsetMinutes: 60,
   customReminders: [],
-  notificationMode: 'rebiid_sound',
+  notificationMode: 'device_sound',
   notificationSoundEnabled: true,
   notificationVibrationEnabled: true,
-  notificationSound: 'gentle',
+  notificationSound: 'default',
   notificationCategoryPreferences: createDefaultNotificationCategoryPreferences({
-    notificationSound: 'gentle',
+    notificationSound: 'default',
     notificationVibrationEnabled: true,
     defaultReminderOffsetMinutes: 60,
   }),

@@ -143,7 +143,9 @@ export const yomKippurReminderRules = [
     title: 'תחילת הצום',
     message: 'הערב מתחיל צום יום כיפור — גמר חתימה טובה.',
     triggerType: 'holiday',
-    holidayKeywords: ['Erev Yom Kippur', 'Yom Kippur'],
+    holidayKeywords: ['Erev Yom Kippur'],
+    phase: 'start',
+    zmanAnchor: 'sunset',
     severity: 'important',
   }),
   createRule({
@@ -153,7 +155,8 @@ export const yomKippurReminderRules = [
     message: 'צום יום כיפור מסתיים — גמר חתימה טובה!',
     triggerType: 'holiday',
     holidayKeywords: ['Yom Kippur'],
-    defaultNotificationHour: 20,
+    phase: 'end',
+    zmanAnchor: 'tzeit',
   }),
 ];
 

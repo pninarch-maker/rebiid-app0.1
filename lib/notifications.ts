@@ -10,15 +10,23 @@ import {
   shouldForegroundPlaySound,
 } from '@/lib/notificationChannels';
 import {
+  formatChannelSnapshotsForAlert,
+  inspectAllAndroidNotificationChannels,
+  logNotificationScheduleDiagnostic,
+  NOTIFICATION_DIAGNOSTICS_ENABLED,
+} from '@/lib/notificationDiagnostics';
+import {
   getNotificationCategoryPreferenceForReminder,
   shouldScheduleReminderNotification,
 } from '@/lib/notificationCategoryPrefs';
+import { getAndroidNotificationDeliveryConfig } from '@/lib/notificationMode';
 import { getNotificationTriggerDate } from '@/lib/reminderTiming';
 import { JewishEngine } from '@/src/engine/JewishEngine';
 
 import {
   addNotificationResponseReceivedListener,
-  cancelAllScheduledNotificationsAsync,
+  cancelScheduledNotificationAsync,
+  getAllScheduledNotificationsAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
   scheduleNotificationAsync,
@@ -26,6 +34,7 @@ import {
   setNotificationHandler,
 } from './localNotifications';
 import {
+  getAppSettings,
   getNotificationsEnabled,
   loadAppSettings,
 } from './settings';
@@ -33,18 +42,165 @@ import {
 // REBIID intentionally does not use remote push notifications.
 // All reminders are scheduled locally on the device.
 
+/** Built-in and personal reminder notification identifiers start with YYYY-MM-DD-. */
+const REBIID_NOTIFICATION_ID_PATTERN = /^\d{4}-\d{2}-\d{2}-/;
+
+let syncInFlight: Promise<number> | null = null;
+let channelsEnsuredThisSession = false;
+
 setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
     shouldPlaySound: shouldForegroundPlaySound(currentAppSettings),
     shouldSetBadge: false,
-    shouldShowBanner: true,
     shouldShowList: true,
   }),
 });
 
 function isNativePlatform(): boolean {
   return Platform.OS === 'android' || Platform.OS === 'ios';
+}
+
+function isRebiidOwnedNotificationId(identifier: string | null | undefined): boolean {
+  return Boolean(identifier && REBIID_NOTIFICATION_ID_PATTERN.test(identifier));
+}
+
+function getTriggerEpochMs(trigger: unknown): number | null {
+  if (!trigger || typeof trigger !== 'object') {
+    return null;
+  }
+
+  const candidate = trigger as { date?: Date | number | string; value?: number };
+  if (candidate.date !== undefined) {
+    const date =
+      candidate.date instanceof Date ? candidate.date : new Date(candidate.date);
+    return Number.isNaN(date.getTime()) ? null : date.getTime();
+  }
+
+  if (typeof candidate.value === 'number') {
+    return candidate.value;
+  }
+
+  return null;
+}
+
+async function cancelRebiidOwnedNotifications(): Promise<void> {
+  const scheduled = await getAllScheduledNotificationsAsync();
+  for (const notification of scheduled) {
+    if (isRebiidOwnedNotificationId(notification.identifier)) {
+      await cancelScheduledNotificationAsync(notification.identifier!);
+    }
+  }
+}
+
+type DesiredNotification = {
+  identifier: string;
+  content: ReturnType<typeof buildCategoryNotificationContent>;
+  triggerDate: Date;
+  channelId: string | null;
+  deliveryMode: ReturnType<typeof getAndroidNotificationDeliveryConfig>;
+};
+
+async function buildDesiredNotifications(now: number): Promise<Map<string, DesiredNotification>> {
+  const desired = new Map<string, DesiredNotification>();
+  const upcoming = JewishEngine.getUpcomingReminders(30);
+
+  for (const reminder of upcoming) {
+    if (!shouldScheduleReminderNotification(reminder, currentAppSettings)) {
+      continue;
+    }
+
+    const triggerDate = getNotificationTriggerDate(reminder, currentAppSettings);
+    if (!triggerDate || triggerDate.getTime() <= now) {
+      continue;
+    }
+
+    const categoryPreference = getNotificationCategoryPreferenceForReminder(
+      reminder,
+      currentAppSettings,
+    );
+
+    const content = buildCategoryNotificationContent(
+      currentAppSettings,
+      categoryPreference,
+      reminder.title,
+      reminder.message,
+      { reminderId: reminder.id },
+    );
+
+    const channelId =
+      Platform.OS === 'android'
+        ? resolveCategoryAndroidChannelId(currentAppSettings, categoryPreference)
+        : null;
+
+    desired.set(reminder.id, {
+      identifier: reminder.id,
+      content,
+      triggerDate,
+      channelId,
+      deliveryMode: getAndroidNotificationDeliveryConfig(currentAppSettings.notificationMode),
+    });
+  }
+
+  return desired;
+}
+
+async function reconcileScheduledNotifications(desired: Map<string, DesiredNotification>): Promise<number> {
+  const existing = await getAllScheduledNotificationsAsync();
+  const existingById = new Map(
+    existing
+      .filter((item) => isRebiidOwnedNotificationId(item.identifier))
+      .map((item) => [item.identifier!, item]),
+  );
+
+  for (const [identifier, notification] of existingById) {
+    if (!desired.has(identifier)) {
+      await cancelScheduledNotificationAsync(identifier);
+    }
+  }
+
+  let scheduled = 0;
+
+  for (const [identifier, plan] of desired) {
+    const existingNotification = existingById.get(identifier);
+    const existingTriggerMs = getTriggerEpochMs(existingNotification?.trigger);
+    const plannedTriggerMs = plan.triggerDate.getTime();
+
+    if (
+      existingNotification &&
+      existingTriggerMs !== null &&
+      Math.abs(existingTriggerMs - plannedTriggerMs) < 1000
+    ) {
+      continue;
+    }
+
+    if (existingNotification) {
+      await cancelScheduledNotificationAsync(identifier);
+    }
+
+    logNotificationScheduleDiagnostic({
+      kind: 'category',
+      persistedMode: currentAppSettings.notificationMode,
+      delivery: plan.deliveryMode,
+      identifier: plan.identifier,
+      contentSound: plan.content.sound as string | false | undefined,
+      triggerChannelId: plan.channelId,
+    });
+
+    await scheduleNotificationAsync({
+      identifier: plan.identifier,
+      content: plan.content,
+      trigger: {
+        type: SchedulableTriggerInputTypes.DATE,
+        date: plan.triggerDate,
+        ...(plan.channelId ? { channelId: plan.channelId } : {}),
+      },
+    });
+
+    scheduled += 1;
+  }
+
+  return scheduled;
 }
 
 /** Check OS permission without prompting the user. */
@@ -83,68 +239,36 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   }
 }
 
-export async function syncLocalNotifications(): Promise<number> {
+async function performSyncLocalNotifications(): Promise<number> {
   if (!isNativePlatform()) {
     return 0;
   }
 
   try {
-    await cancelAllScheduledNotificationsAsync();
-    await ensureAndroidNotificationChannels(currentAppSettings);
-
-    const upcoming = JewishEngine.getUpcomingReminders(30);
-    const now = Date.now();
-    let scheduled = 0;
-
-    for (const reminder of upcoming) {
-      if (!shouldScheduleReminderNotification(reminder, currentAppSettings)) {
-        continue;
-      }
-
-      const triggerDate = getNotificationTriggerDate(reminder, currentAppSettings);
-
-      if (!triggerDate || triggerDate.getTime() <= now) {
-        continue;
-      }
-
-      const categoryPreference = getNotificationCategoryPreferenceForReminder(
-        reminder,
-        currentAppSettings,
-      );
-
-      const content = buildCategoryNotificationContent(
-        currentAppSettings,
-        categoryPreference,
-        reminder.title,
-        reminder.message,
-        { reminderId: reminder.id },
-      );
-
-      await scheduleNotificationAsync({
-        identifier: reminder.id,
-        content,
-        trigger: {
-          type: SchedulableTriggerInputTypes.DATE,
-          date: triggerDate,
-          ...(Platform.OS === 'android'
-            ? {
-                channelId: resolveCategoryAndroidChannelId(
-                  currentAppSettings,
-                  categoryPreference,
-                ),
-              }
-            : {}),
-        },
-      });
-
-      scheduled += 1;
+    if (!channelsEnsuredThisSession) {
+      await ensureAndroidNotificationChannels(currentAppSettings);
+      channelsEnsuredThisSession = true;
     }
 
-    return scheduled;
+    const now = Date.now();
+    const desired = await buildDesiredNotifications(now);
+    return await reconcileScheduledNotifications(desired);
   } catch (error) {
     console.warn('[notifications] sync failed', error);
     return 0;
   }
+}
+
+export async function syncLocalNotifications(): Promise<number> {
+  if (syncInFlight) {
+    return syncInFlight;
+  }
+
+  syncInFlight = performSyncLocalNotifications().finally(() => {
+    syncInFlight = null;
+  });
+
+  return syncInFlight;
 }
 
 /**
@@ -161,7 +285,7 @@ export async function syncNotificationsIfEnabled(): Promise<void> {
     const enabled = await getNotificationsEnabled();
 
     if (!enabled) {
-      await cancelAllScheduledNotificationsAsync();
+      await cancelRebiidOwnedNotifications();
       return;
     }
 
@@ -203,48 +327,74 @@ export async function disableNotifications(): Promise<void> {
   }
 
   try {
-    await cancelAllScheduledNotificationsAsync();
+    await cancelRebiidOwnedNotifications();
   } catch (error) {
     console.warn('[notifications] disable failed', error);
   }
 }
 
-/** Schedules a one-off local test notification a few seconds from now. */
-export async function scheduleTestNotification(): Promise<boolean> {
+export type ScheduleTestNotificationResult = {
+  success: boolean;
+  diagnosticsText: string | null;
+};
+
+/**
+ * Schedules a one-off local test notification a few seconds from now.
+ * Reloads persisted settings so the selected mode cannot be overwritten by stale memory.
+ */
+export async function scheduleTestNotification(): Promise<ScheduleTestNotificationResult> {
   if (!isNativePlatform()) {
-    return false;
+    return { success: false, diagnosticsText: null };
   }
 
   try {
-    await ensureAndroidNotificationChannels(currentAppSettings);
+    const settings = await getAppSettings();
+    await ensureAndroidNotificationChannels(settings);
 
     const granted = await requestNotificationPermissions();
 
     if (!granted) {
-      return false;
+      return { success: false, diagnosticsText: null };
     }
 
+    const mode = settings.notificationMode;
+    const delivery = getAndroidNotificationDeliveryConfig(mode);
     const content = buildNotificationContent(
-      currentAppSettings,
+      settings,
       'היי, זו תזכורת ניסיון 👋',
       'REBIID עובד — ככה ייראו התזכורות שלך.',
     );
+
+    const channelId = Platform.OS === 'android' ? delivery.channelId : null;
+
+    logNotificationScheduleDiagnostic({
+      kind: 'test',
+      persistedMode: mode,
+      delivery,
+      identifier: null,
+      contentSound: content.sound as string | false | undefined,
+      triggerChannelId: channelId,
+    });
 
     await scheduleNotificationAsync({
       content,
       trigger: {
         type: SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: 5,
-        ...(Platform.OS === 'android'
-          ? { channelId: resolveNotificationChannelId(currentAppSettings) }
-          : {}),
+        ...(channelId ? { channelId } : {}),
       },
     });
 
-    return true;
+    let diagnosticsText: string | null = null;
+    if (NOTIFICATION_DIAGNOSTICS_ENABLED && Platform.OS === 'android') {
+      const snapshots = await inspectAllAndroidNotificationChannels();
+      diagnosticsText = formatChannelSnapshotsForAlert(mode, snapshots);
+    }
+
+    return { success: true, diagnosticsText };
   } catch (error) {
     console.warn('[notifications] test schedule failed', error);
-    return false;
+    return { success: false, diagnosticsText: null };
   }
 }
 
@@ -274,7 +424,6 @@ export async function initializeNotifications(): Promise<void> {
 
   try {
     await loadAppSettings();
-    await ensureAndroidNotificationChannels(currentAppSettings);
     registerLocalNotificationListeners();
     await requestPermissionOnFirstLaunch();
     await syncNotificationsIfEnabled();
@@ -284,6 +433,18 @@ export async function initializeNotifications(): Promise<void> {
 }
 
 export async function rescheduleNotificationsAfterSettingsChange(): Promise<void> {
+  channelsEnsuredThisSession = false;
+  logNotificationScheduleDiagnostic({
+    kind: 'rescheduled',
+    persistedMode: currentAppSettings.notificationMode,
+    delivery: getAndroidNotificationDeliveryConfig(currentAppSettings.notificationMode),
+    identifier: null,
+    contentSound: undefined,
+    triggerChannelId: Platform.OS === 'android'
+      ? resolveNotificationChannelId(currentAppSettings)
+      : null,
+  });
   await ensureAndroidNotificationChannels(currentAppSettings);
+  channelsEnsuredThisSession = true;
   await syncNotificationsIfEnabled();
 }

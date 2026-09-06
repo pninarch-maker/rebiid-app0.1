@@ -7,6 +7,10 @@ import {
 import { currentAppSettings } from '@/lib/appState';
 import { isBuiltInRuleAllowedByCategoryPreferences } from '@/lib/notificationCategoryPrefs';
 import {
+  isLegacyPersonalReminder,
+  personalReminderMatchesLocalDate,
+} from '@/lib/personalReminderScheduling';
+import {
   applyReminderPlaceholders,
   buildBuiltInPlaceholderValues,
   buildPersonalPlaceholderValues,
@@ -18,6 +22,7 @@ import { addDays, toDateKey } from './helpers';
 import {
   buildDayCalendarContext,
   hasHolidayKeyword,
+  isTishaBavPostponedFromShabbat,
   type DayCalendarContext,
 } from './dayContext';
 import type {
@@ -124,7 +129,10 @@ function ruleMatches(
         return !ctx.events.some((event) => event.isChanukah && event.chanukahDay === 1);
       }
       if (rule.id === 'yom_kippur_fast_begins') {
-        return hasHolidayKeyword(ctx.tomorrowEvents, rule.holidayKeywords ?? []);
+        return hasHolidayKeyword(ctx.tomorrowEvents, ['Yom Kippur']);
+      }
+      if (rule.id === 'tisha_bav_fast_ends' && isTishaBavPostponedFromShabbat(ctx)) {
+        return false;
       }
       return true;
     }
@@ -175,7 +183,7 @@ export function evaluateBuiltInRules(
       continue;
     }
 
-    const key = `${toDateKey(ctx.date)}-${rule.id}`;
+    const key = `${toDateKey(ctx.date)}-${rule.id}${rule.phase ? `-${rule.phase}` : ''}`;
     if (seen.has(key)) {
       continue;
     }
@@ -188,6 +196,10 @@ export function evaluateBuiltInRules(
 }
 
 function customMatchesToday(reminder: CustomReminder, ctx: DayCalendarContext): boolean {
+  if (!isLegacyPersonalReminder(reminder)) {
+    return personalReminderMatchesLocalDate(reminder, ctx.date);
+  }
+
   return (
     hdateMatchesEnglishMonth(ctx.hdate, reminder.hebrewMonth) &&
     ctx.hdate.getDate() === reminder.hebrewDay

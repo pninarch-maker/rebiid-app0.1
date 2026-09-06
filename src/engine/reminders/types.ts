@@ -34,6 +34,16 @@ export type ReminderTriggerType =
 
 export type ReminderSeverity = 'info' | 'important';
 
+/** Lifecycle phase for timed reminders (fasts, holidays). */
+export type ReminderPhase = 'eve' | 'start' | 'end' | 'advance' | 'info';
+
+export type ZmanAnchor =
+  | 'candleLighting'
+  | 'sunset'
+  | 'nightfall'
+  | 'tzeit'
+  | 'alotHashachar';
+
 export type HavdalahMethod = 'regular' | 'rabbeinu_tam';
 
 export type SettingsMinhag = 'ashkenazi' | 'sephardi' | 'custom';
@@ -61,8 +71,10 @@ export interface BuiltInReminderRule {
   requiresHavdalahMethod?: HavdalahMethod;
   informationalOnly?: boolean;
   patternId?: string;
-  /** Zman used for relative_to_zman triggers and notification scheduling. */
-  zmanAnchor?: 'candleLighting' | 'sunset' | 'nightfall';
+  /** Lifecycle phase — separates eve/start/end for deduplication and scheduling. */
+  phase?: ReminderPhase;
+  /** Zman used for notification scheduling (and relative_to_zman triggers). */
+  zmanAnchor?: ZmanAnchor;
   /** Local notification hour (0–23) when not scheduled by zman. Defaults to 9. */
   defaultNotificationHour?: number;
   /** Local notification time (HH:MM). Takes precedence over defaultNotificationHour. */
@@ -93,6 +105,27 @@ export interface CustomReminder {
   enabled: boolean;
   reminderOffsetMinutes: number;
   category?: 'personal' | 'minhag_segulah';
+  schemaVersion?: number;
+  kind?: 'birthday' | 'yahrzeit' | 'other';
+  inputCalendar?: 'hebrew' | 'gregorian';
+  originalGregorianDate?: { isoDate: string };
+  originalHebrewDate?: import('../../../lib/personalReminderTypes').HebrewDateAnchor;
+  occurredAfterSunset?: boolean;
+  effectiveHebrewAnchor?: import('../../../lib/personalReminderTypes').HebrewDateAnchor;
+  recurrence?: 'once' | 'annual_hebrew';
+  reminderTimeLocal?: string;
+  yahrzeitPolicy?: {
+    adarInLeapYear?: 'adar_i' | 'adar_ii' | 'both';
+    missingDayThirty?: 'day_29' | 'first_of_next_month' | 'both';
+  };
+  calendarRuleVersion?: string;
+  scheduledOccurrences?: {
+    occurrenceId: string;
+    gregorianDate: string;
+    notificationId: string;
+  }[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** @deprecated Use CustomReminder */

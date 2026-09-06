@@ -124,4 +124,55 @@ assert(
       .some((f) => read(path.join('src', f)).includes('I18nManager.forceRTL')),
 );
 
+// --- Settings About card (focused layout regression) ---
+const settingsScreen = read('app/(tabs)/settings.tsx');
+const settingsStyles = read('src/theme/settingsScreenStyles.ts');
+const aboutCardBlock = settingsStyles.match(/aboutCard:\s*\{[^}]*\}/)?.[0] ?? '';
+const aboutLogoBlock = settingsStyles.match(/aboutLogo:\s*\{[^}]*\}/)?.[0] ?? '';
+const aboutLogoWrapBlock = settingsStyles.match(/aboutLogoWrap:\s*\{[^}]*\}/)?.[0] ?? '';
+
+assert(
+  'Settings About card uses content-driven aboutCard style (not flex:1 Pressable card)',
+  settingsScreen.includes('styles.aboutCard') &&
+    aboutCardBlock.includes('flexGrow: 0') &&
+    !aboutCardBlock.includes('flex: 1') &&
+    !aboutCardBlock.includes("height: '100%'") &&
+    !/minHeight:\s*\d{3,}/.test(aboutCardBlock),
+);
+
+assert(
+  'Settings About logo is centered with fixed size, not absolute',
+  aboutLogoBlock.includes('width: 96') &&
+    aboutLogoWrapBlock.includes("alignItems: 'center'") &&
+    !aboutLogoBlock.includes("position: 'absolute'") &&
+    !aboutLogoWrapBlock.includes("position: 'absolute'"),
+);
+
+assert(
+  'Settings About renders version, developer, and legal link rows',
+  settingsScreen.includes('getAppVersion()') &&
+    settingsScreen.includes('AboutScreenCopy.versionLabel') &&
+    settingsScreen.includes('AboutScreenCopy.developerLabel') &&
+    settingsScreen.includes('AboutScreenCopy.termsTitle') &&
+    settingsScreen.includes('AboutScreenCopy.privacyTitle') &&
+    settingsScreen.includes('AboutScreenCopy.disclaimerTitle') &&
+    settingsScreen.includes("router.push('/about')"),
+);
+
+assert(
+  'Settings About legal rows use RtlText inRow + physicalLtrRow chevron-first order',
+  settingsScreen.includes('<RtlText inRow style={styles.aboutNavLabel}>') &&
+    settingsStyles.includes('aboutNavRow:') &&
+    settingsStyles.includes('...physicalLtrRow') &&
+    settingsScreen.indexOf('styles.aboutNavChevron') <
+      settingsScreen.indexOf('styles.aboutNavLabelWrap'),
+);
+
+assert(
+  'Broken aboutLink* styles removed (no full-width RtlText chevron regression)',
+  !settingsStyles.includes('aboutLinkLogo') &&
+    !settingsStyles.includes('aboutLinkChevron') &&
+    !settingsScreen.includes('styles.aboutLinkRow'),
+);
+
 console.log('All RTL architecture checks passed.');

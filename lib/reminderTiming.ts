@@ -1,3 +1,5 @@
+import { HDate } from '@hebcal/core';
+
 import { getBuiltInReminderRules } from '@/src/data/reminders';
 import type { AppReminder, BuiltInReminderRule } from '@/src/engine/reminders/types';
 import type { UpcomingReminder } from '@/src/engine/types';
@@ -50,6 +52,13 @@ export function getReminderNotificationOffsetMinutes(
   reminder: UpcomingReminder,
   settings: AppSettings,
 ): number {
+  const rule = findBuiltInRule(reminder.ruleId);
+
+  // Halachic fast-end/start times must not be shifted by category advance.
+  if (rule?.zmanAnchor && (rule.phase === 'end' || rule.phase === 'start')) {
+    return rule.offsetMinutes ?? 0;
+  }
+
   const categoryAdvance = getNotificationCategoryPreferenceForReminder(reminder, settings)
     .advanceReminderMinutes;
 
@@ -91,8 +100,61 @@ function getBuiltInRule(ruleId?: string): BuiltInReminderRule | undefined {
   return findBuiltInRule(ruleId);
 }
 
+/** When 9 Av is Shabbat, erev falls on Shabbat — fast begins at motzei (tzeit), not sunset. */
+function isPostponedTishaBavBeginsDay(dateObj: Date, ruleId?: string): boolean {
+  if (ruleId !== 'tisha_bav_fast_begins') {
+    return false;
+  }
+  const hdate = new HDate(dateObj);
+  return hdate.getDay() === 6 && hdate.getMonthName() === 'Av' && hdate.getDate() === 9;
+}
+
+function resolveEffectiveZmanAnchor(
+  rule: BuiltInReminderRule | undefined,
+  dateObj: Date,
+  ruleId?: string,
+): BuiltInReminderRule['zmanAnchor'] {
+  if (!rule?.zmanAnchor) {
+    return undefined;
+  }
+  if (isPostponedTishaBavBeginsDay(dateObj, ruleId)) {
+    return 'tzeit';
+  }
+  return rule.zmanAnchor;
+}
+
 function formatHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`;
+}
+
+function resolveZmanTime(
+  day: ReturnType<typeof getJewishDay>,
+  anchor: BuiltInReminderRule['zmanAnchor'],
+  dateObj: Date,
+): Date | null {
+  if (!anchor) {
+    return null;
+  }
+
+  const { zmanim } = day;
+
+  if (anchor === 'candleLighting' && zmanim.candleLighting) {
+    return parseTimeOnDate(dateObj, zmanim.candleLighting);
+  }
+  if (anchor === 'sunset' && zmanim.sunset) {
+    return parseTimeOnDate(dateObj, zmanim.sunset);
+  }
+  if (anchor === 'tzeit' && zmanim.tzeit) {
+    return parseTimeOnDate(dateObj, zmanim.tzeit);
+  }
+  if (anchor === 'alotHashachar' && zmanim.alotHashachar) {
+    return parseTimeOnDate(dateObj, zmanim.alotHashachar);
+  }
+  if (anchor === 'nightfall' && zmanim.nightfall) {
+    return parseTimeOnDate(dateObj, zmanim.nightfall);
+  }
+
+  return null;
 }
 
 export function getEventTimeForReminder(
@@ -102,16 +164,13 @@ export function getEventTimeForReminder(
   const day = getJewishDay(reminder.dateObj);
   const rule = getBuiltInRule(reminder.ruleId);
 
-  if (rule?.zmanAnchor === 'candleLighting' && day.zmanim.candleLighting) {
-    return parseTimeOnDate(reminder.dateObj, day.zmanim.candleLighting);
-  }
-
-  if (rule?.zmanAnchor === 'sunset' && day.zmanim.sunset) {
-    return parseTimeOnDate(reminder.dateObj, day.zmanim.sunset);
-  }
-
-  if (rule?.zmanAnchor === 'nightfall' && day.zmanim.nightfall) {
-    return parseTimeOnDate(reminder.dateObj, day.zmanim.nightfall);
+  const zmanTime = resolveZmanTime(
+    day,
+    resolveEffectiveZmanAnchor(rule, reminder.dateObj, reminder.ruleId),
+    reminder.dateObj,
+  );
+  if (zmanTime) {
+    return zmanTime;
   }
 
   if (rule?.weekdayHour !== undefined) {
@@ -147,16 +206,25 @@ export function getRelatedZmanLabel(reminder: UpcomingReminder): string | undefi
   const day = getJewishDay(reminder.dateObj);
   const { zmanim } = day;
   const rule = getBuiltInRule(reminder.ruleId);
+  const anchor = resolveEffectiveZmanAnchor(rule, reminder.dateObj, reminder.ruleId);
 
-  if (rule?.zmanAnchor === 'candleLighting' && zmanim.candleLighting) {
+  if (anchor === 'candleLighting' && zmanim.candleLighting) {
     return `הדלקת נרות: ${zmanim.candleLighting}`;
   }
 
-  if (rule?.zmanAnchor === 'sunset' && zmanim.sunset) {
+  if (anchor === 'sunset' && zmanim.sunset) {
     return `שקיעה: ${zmanim.sunset}`;
   }
 
-  if (rule?.zmanAnchor === 'nightfall' && zmanim.nightfall) {
+  if (anchor === 'tzeit' && zmanim.tzeit) {
+    return `צאת הכוכבים: ${zmanim.tzeit}`;
+  }
+
+  if (anchor === 'alotHashachar' && zmanim.alotHashachar) {
+    return `עלות השחר: ${zmanim.alotHashachar}`;
+  }
+
+  if (anchor === 'nightfall' && zmanim.nightfall) {
     return `צאת שבת: ${zmanim.nightfall}`;
   }
 

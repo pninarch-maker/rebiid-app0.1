@@ -109,28 +109,59 @@ export function createSettingsStyles(theme: AppTheme, surfaces: ThemedSurfaces) 
       textAlign: 'right',
       writingDirection: 'ltr',
     },
-    aboutLinkRow: {
+    /** Content-driven About card — never flex:1 / viewport height / large minHeight. */
+    aboutCard: {
+      ...surfaces.baseCard,
+      // height follows children; stretch width only
+      flexGrow: 0,
+      flexShrink: 0,
+    },
+    aboutLogoWrap: {
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'stretch',
+      marginBottom: 12,
+    },
+    aboutLogo: {
+      width: 96,
+      height: 96,
+      alignSelf: 'center',
+    },
+    aboutMetaRow: {
+      paddingVertical: 10,
+      minHeight: Layout.minTouchTarget,
+    },
+    aboutNavRow: {
       ...physicalLtrRow,
       alignItems: 'center',
       gap: 12,
+      paddingVertical: 12,
+      minHeight: Layout.minTouchTarget,
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
     },
-    aboutLinkLogo: { width: 48, height: 48 },
-    aboutLinkText: { flex: 1, ...rtlContentBlock, gap: 4 },
-    aboutLinkLabel: {
-      fontSize: 17,
-      fontWeight: '600',
+    aboutNavRowPressed: {
+      backgroundColor: surfaces.pressedRow,
+      marginHorizontal: -Layout.cardPadding,
+      paddingHorizontal: Layout.cardPadding,
+    },
+    aboutNavLabelWrap: {
+      flex: 1,
+      minWidth: 0,
+    },
+    aboutNavLabel: {
+      fontSize: 16,
+      fontWeight: '500',
       color: colors.text,
-      ...rtlTitle,
     },
-    aboutLinkSubtitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      ...rtlSubtitle,
-    },
-    aboutLinkChevron: {
-      fontSize: 28,
+    aboutNavChevron: {
+      fontSize: 22,
       color: colors.textMuted,
-      lineHeight: 28,
+      lineHeight: 24,
+      // Intentional LTR glyph on physical left inside physicalLtrRow — do not RtlText.
+      textAlign: 'left',
+      writingDirection: 'ltr',
     },
     selectedValue: {
       fontSize: 15,

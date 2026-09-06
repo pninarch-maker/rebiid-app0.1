@@ -1,4 +1,4 @@
-﻿{
+{
   "expo": {
     "name": "REBIID",
     "slug": "rebiid-app",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.rebiid.app",
-      "versionCode": 6,
+      "versionCode": 11,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground-v2.png",
@@ -24,7 +24,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.SCHEDULE_EXACT_ALARM"
       ]
     },
     "web": {
@@ -39,10 +40,7 @@
         {
           "icon": "./assets/images/icon-v2.png",
           "color": "#3657D6",
-          "defaultChannel": "rebiid-sound-v3",
-          "sounds": [
-            "./assets/sounds/rebiid_gentle.wav"
-          ],
+          "defaultChannel": "rebiid-device-sound-v3",
           "enableBackgroundRemoteNotifications": false
         }
       ],
