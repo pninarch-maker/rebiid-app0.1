@@ -21,7 +21,8 @@
     "test:reminder-content": "npx --yes esbuild scripts/test-reminder-content.ts --bundle --platform=node --format=esm --outfile=scripts/.test-out/reminder-content.mjs --packages=external --alias:@=. && node scripts/.test-out/reminder-content.mjs",
     "test:calendar": "npx --yes esbuild scripts/test-calendar-week-layout.ts --bundle --platform=node --format=esm --outfile=scripts/.test-out/calendar.mjs --packages=external --alias:@=. && node scripts/.test-out/calendar.mjs",
     "test:rtl": "npx --yes esbuild scripts/test-rtl-architecture.ts --bundle --platform=node --format=esm --outfile=scripts/.test-out/rtl.mjs --packages=external --alias:@=. && node scripts/.test-out/rtl.mjs",
-    "test:notifications": "npx --yes esbuild scripts/test-notifications.ts --bundle --platform=node --format=esm --outfile=scripts/.test-out/notifications.mjs --packages=external --alias:@=. && node scripts/.test-out/notifications.mjs"
+    "test:notifications": "npx --yes esbuild scripts/test-notifications.ts --bundle --platform=node --format=esm --outfile=scripts/.test-out/notifications.mjs --packages=external --alias:@=. && node scripts/.test-out/notifications.mjs",
+    "test:notification-plan": "npx --yes esbuild scripts/test-notification-plan.ts --bundle --platform=node --format=esm --outfile=scripts/.test-out/notification-plan.mjs --packages=external --alias:@=. && node scripts/.test-out/notification-plan.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
